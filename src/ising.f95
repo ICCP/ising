@@ -1,48 +1,26 @@
 program ising
 !  use rand_tools
+  use plot
   implicit none
 
   integer              :: nx,ny
   integer, allocatable :: sigma(:,:)
   integer              :: i,j
   real, parameter      :: INTER = 1
-  real, parameter      :: FIELD = 0
-  real, parameter      :: BETA  = 1
+  real, parameter      :: FIELD = 1
+  real, parameter      :: BETA  = .1
   real, parameter      :: E     = exp(1.0)
 
-  nx = 10
-  ny = 10
+  nx = 500
+  ny = 500
 
   allocate (sigma(nx,ny))
 
-  ! Should be lowest energy
-  do j=1,ny
-    do i=1,nx
-      sigma(i,j) = 1
-    end do
-  end do
-  call sigmaprint(nx,ny,sigma)
-  write (*,*) hamiltonian(nx,ny,sigma)
-
-  ! Should be higher energy
-  do j=1,ny
-    do i=1,nx
-      sigma(i,j) = -1
-    end do
-  end do
-  call sigmaprint(nx,ny,sigma)
-  write (*,*) hamiltonian(nx,ny,sigma)
-
-  ! Should be highest energy
-  do j=1,ny
-    do i=1,nx
-      sigma(i,j) = (-1)**(i+j)
-    end do
-  end do
-  call sigmaprint(nx,ny,sigma)
-  write (*,*) hamiltonian(nx,ny,sigma)
-
+  ! TODO: change this API
+  call plot_init(nx,ny)
   call montecarlo(nx,ny,sigma)
+  call plot_close()
+
   deallocate (sigma)
 
 contains
@@ -59,11 +37,14 @@ contains
     call init_random_seed()
     call random_number(tmparr)
     sigma = floor(tmparr*2)*2-1
-    call sigmaprint(nx,ny,sigma)
+    !call sigmaprint(nx,ny,sigma)
+!    call plbop()
+    call plot_lattice(sigma)
+    call pleop()
     write(*,*)
 
     ! Repeat until a set number of states have been tried (or criteria met)
-    do k=1,1000
+    do k=1,100000
       ! Determine new state by flipping a random spin
       call random_number(tmp)
       i = ceiling(tmp*nx)
@@ -82,7 +63,10 @@ contains
         sigma = newsigma
       end if
     end do
-    call sigmaprint(nx,ny,sigma)
+    !call sigmaprint(nx,ny,sigma)
+    call plbop()
+    call plot_lattice(sigma)
+    call pleop()
   end subroutine
 
   subroutine sigmaprint(nx,ny,sigma)
