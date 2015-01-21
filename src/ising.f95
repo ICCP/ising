@@ -5,46 +5,49 @@ program ising
 
   integer              :: nx,ny
   integer, allocatable :: sigma(:,:)
-  integer              :: i,j
   real, parameter      :: INTER = 1
-  real, parameter      :: FIELD = 1
-  real, parameter      :: BETA  = .1
+  real, parameter      :: FIELD = 0
+  real, parameter      :: BETA  = 1
   real, parameter      :: E     = exp(1.0)
 
-  nx = 500
-  ny = 500
+  nx = 1000
+  ny = 200
 
   allocate (sigma(nx,ny))
 
-  ! TODO: change this API
   call plot_init(nx,ny)
-  call montecarlo(nx,ny,sigma)
+  call montecarlo(sigma)
   call plot_close()
 
   deallocate (sigma)
 
 contains
-  subroutine montecarlo(nx,ny,sigma)
-    integer, intent(in)    :: nx,ny
-    integer, intent(inout) :: sigma(nx,ny)
-    integer                :: newsigma(nx,ny)
+  subroutine montecarlo(sigma)
+    integer, intent(inout) :: sigma(:,:)
+    integer                :: nx,ny
     integer                :: i,j,k
-    real                   :: tmparr(nx,ny)
+    integer, allocatable   :: newsigma(:,:)
+    real, allocatable      :: tmparr(:,:)
     real                   :: tmp
     real                   :: Ediff
 
+    nx = size(sigma,1)
+    ny = size(sigma,2)
+
     ! Initialize sigma randomly
+    allocate(tmparr(nx,ny))
     call init_random_seed()
     call random_number(tmparr)
     sigma = floor(tmparr*2)*2-1
-    !call sigmaprint(nx,ny,sigma)
-!    call plbop()
+    deallocate(tmparr)
+
+    ! Print out initial conditions
     call plot_lattice(sigma)
     call pleop()
-    write(*,*)
 
     ! Repeat until a set number of states have been tried (or criteria met)
-    do k=1,100000
+    allocate(newsigma(nx,ny))
+    do k=1,1000000
       ! Determine new state by flipping a random spin
       call random_number(tmp)
       i = ceiling(tmp*nx)
@@ -63,11 +66,12 @@ contains
         sigma = newsigma
       end if
     end do
+    deallocate(newsigma)
     !call sigmaprint(nx,ny,sigma)
     call plbop()
     call plot_lattice(sigma)
     call pleop()
-  end subroutine
+  end subroutine montecarlo
 
   subroutine sigmaprint(nx,ny,sigma)
     integer, intent(in) :: nx,ny
@@ -85,7 +89,7 @@ contains
       end do
       write(*,*)
     end do
-  end subroutine
+  end subroutine sigmaprint
 
   function neighb_contrib(i,j,nx,ny,sigma) result(contrib)
     integer, intent(in) :: i,j,nx,ny
@@ -108,7 +112,7 @@ contains
       contrib = contrib - INTER*sigma(i,j)*sigma(i,j+1)
     end if
 
-  end function
+  end function neighb_contrib
 
   function field_contrib(i,j,sigma) result(contrib)
     integer, intent(in) :: i,j
@@ -119,7 +123,7 @@ contains
 
     ! Interaction with external field
     contrib = contrib - FIELD*sigma(i,j)
-  end function
+  end function field_contrib
 
   function hamiltonian(nx,ny,sigma) result(energy)
     integer, intent(in) :: nx,ny
@@ -136,7 +140,7 @@ contains
         energy = energy + field_contrib(i,j,sigma)
       end do
     end do
-  end function
+  end function hamiltonian
 
   subroutine init_random_seed()
     implicit none
@@ -182,4 +186,4 @@ contains
     end if
     call random_seed(put=seed)
   end subroutine init_random_seed
-end program
+end program ising

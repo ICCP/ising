@@ -8,6 +8,11 @@ module plot
 contains
   subroutine plot_init(sizex,sizey)
     integer, intent(in) :: sizex,sizey
+    character(len=30)   :: geomstr
+    real(8)             :: asp_ratio
+
+    write (geomstr,"(i0,'x',i0)") sizex,sizey
+    asp_ratio = dble(sizey)/dble(sizex)
 
     !You can find default colors at
     !http://plplot.sourceforge.net/docbook-manual/plplot-html-5.9.9/plcol0.html
@@ -23,16 +28,14 @@ contains
     call plscol0(8, 128, 128, 128)  ! grey
     call plscol0(9, 0, 0, 0)        ! black
 
-    call plsetopt("geometry","1000x1000") ! Change?
+    call plsetopt("geometry",geomstr) ! Change?
     call plsdev("png")
     call plsfam(1,1,100000)
     call plsfnam("%n.png")
     call plinit()
     call pladv(0)
-    call plvpas(0d0, 1d0, 0d0, 1d0, 1d0)
+    call plvpas(0d0, 1d0, 0d0, 1d0, asp_ratio)
     call plwind(5d-1, sizex+5d-1, 5d-1, sizey+5d-1)
-!    call plbox("",1d0,0,"",1d0,0)
-!    call plenv(5d-1, sizex+5d-1, 5d-1, sizey+5d-1, 1, -2)
   end subroutine plot_init
 
   subroutine plot_close()
