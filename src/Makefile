@@ -9,7 +9,7 @@ COMPILE = $(FC) $(FFLAGS)
 LINK = $(FC) $(LDFLAGS)
 
 TARGET = ising.exe			# Name of final executable to produce
-OBJS = plot.o ising.o	# List of object dependencies
+OBJS = rand_tools.o plot.o ising.o	# List of object dependencies
 
 $(TARGET): $(OBJS)
 	$(LINK) -o $@ $^ $(LIBS)
