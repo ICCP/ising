@@ -1,0 +1,44 @@
+module inputs
+
+use iso_fortran_env
+
+type :: settings_type
+  integer :: Nx, Ny
+end type settings_type
+
+contains
+!---------------------------------------------------------------------
+! Read settings from file 'settings.inp'
+!---------------------------------------------------------------------
+subroutine read_settings(settings)
+  implicit none
+
+  type(settings_type) :: settings
+  integer :: stat
+
+  open(unit=12,file='settings.inp',status='unknown',iostat=stat)
+  if (stat /= 0) then
+    write(error_unit,'(A)') 'Error opening settings file "settings.inp"'
+    call exit(10)
+  endif
+  read(12,*) settings%Nx, settings%Ny
+  close(12)
+
+  return
+end subroutine read_settings
+!---------------------------------------------------------------------
+! Print a summary of the simulation settings for logging purposes
+!---------------------------------------------------------------------
+subroutine print_settings_summary(settings)
+  implicit none
+  
+  type(settings_type) :: settings
+
+  write(output_unit,'(A)') '============ Settings summary ============'
+  write(output_unit,'(A,2I8)')  '-> Grid settings (Nx,Ny): ',&
+                                settings%Nx,settings%Ny
+
+  return
+end subroutine print_settings_summary
+!---------------------------------------------------------------------
+end module inputs

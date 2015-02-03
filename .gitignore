@@ -1,0 +1,6 @@
+.*.sw*
+*.out
+fort.*
+*.o
+*.mod
+*.exe
