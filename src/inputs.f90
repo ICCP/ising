@@ -37,6 +37,7 @@ subroutine print_settings_summary(settings)
   write(output_unit,'(A)') '============ Settings summary ============'
   write(output_unit,'(A,2I8)')  '-> Grid settings (Nx,Ny): ',&
                                 settings%Nx,settings%Ny
+  write(output_unit,'(A)') '=========================================='
 
   return
 end subroutine print_settings_summary
