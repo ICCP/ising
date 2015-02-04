@@ -4,6 +4,7 @@ use iso_fortran_env
 
 type :: settings_type
   integer :: Nx, Ny
+  logical :: log_flag
 end type settings_type
 
 contains
@@ -22,6 +23,7 @@ subroutine read_settings(settings)
     call exit(10)
   endif
   read(12,*) settings%Nx, settings%Ny
+  read(12,*) log_flag
   close(12)
 
   return
@@ -37,6 +39,7 @@ subroutine print_settings_summary(settings)
   write(output_unit,'(A)') '============ Settings summary ============'
   write(output_unit,'(A,2I8)')  '-> Grid settings (Nx,Ny): ',&
                                 settings%Nx,settings%Ny
+  if (settings%log_flag) write(output_unit,'(A)') '-> Logging to log.out'
   write(output_unit,'(A)') '=========================================='
 
   return

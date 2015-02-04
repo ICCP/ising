@@ -4,28 +4,70 @@ use iso_fortran_env
 use inputs
 
 implicit none
-
+!------------------------------------------------------------------------------
+! Constants
+!------------------------------------------------------------------------------
+real(REAL64), parameter :: kboltz = 8.617332478d-5 ! Boltzmann constant in eV/K
 !------------------------------------------------------------------------------
 ! Input parameters
 !------------------------------------------------------------------------------
 type(settings_type) :: settings
-
 !------------------------------------------------------------------------------
 ! Lattice data
 !------------------------------------------------------------------------------
 integer, allocatable :: spin(:,:)
-
-real(REAL64) :: ham
+!------------------------------------------------------------------------------
+! Local variables
+!------------------------------------------------------------------------------
+real(REAL64) :: ham, rn, flip_prb, ham_old, temp
+integer :: i, j, cnt
 
 write(output_unit,'(A)') '*** ICCP Project 1: Ising model ***'
 
 call read_settings(settings)
 call print_settings_summary(settings)
 
+if (settings%log_flag) open(unit=15,file='log.out',status='unknown')
+
 allocate(spin(settings%Nx,settings%Ny))
 spin = 1
 
-call hamiltonian(settings,spin,ham)
+cnt = 0
+
+! run the monte carlo loop
+monte_loop: do
+
+  cnt = cnt + 1
+
+  ! compute energy of previous state
+  call hamiltonian(settings,spin,ham_old)
+
+  ! uniformly distributed random numbers give lattice site
+  ! to potentially flip
+  call random_number(rn)
+  i = floor(real(settings%Nx)*rn) + 1
+  call random_number(rn)
+  j = floor(real(settings%Ny)*rn) + 1
+
+  ! flip the spin of the (i,j)th site
+  spin(i,j) = -spin(i,j)
+
+  ! compute the new state's energy
+  call hamiltonian(settings,spin,ham)
+
+  ! keep the new state if energy has decreased, otherwise
+  ! retain the new configuration with probability flip_prb
+  if (ham > ham_old) then
+    flip_prb = 0.d0
+    call random_number(rn)
+    if (rn > flip_prb) then
+      spin(i,j) = -spin(i,j)
+    endif
+  endif
+  
+enddo monte_loop
+
+if (settings%log_flag) close(15)
 
 call exit(0)
 
@@ -34,6 +76,12 @@ end program ising
 ! Compute the Hamiltonian of the spin lattice (no impressed field).
 ! Sum of nearest-neighbor products (no diagonals) can be computed
 ! using inner products between pairs of neighboring rows and columns.
+!
+! Inputs:
+! - (settings) settings:  Settings data structure
+! - (integer4) spin:      Spin lattice
+! Outputs:
+! - (double real) ham:    Hamiltonian (energy) of spin lattice
 !---------------------------------------------------------------------
 subroutine hamiltonian(settings,spin,ham)
   use iso_fortran_env
@@ -55,13 +103,13 @@ subroutine hamiltonian(settings,spin,ham)
   do i = 1,settings%Nx-1
     rv1 = spin(i,:)
     rv2 = spin(i+1,:)
-    ham = ham + real(sum(rv1 * rv2))
+    ham = ham - real(sum(rv1 * rv2))
   enddo
   
   do i = 1,settings%Ny-1
     cv1 = spin(:,i)
     cv2 = spin(:,i+1)
-    ham = ham + real(sum(cv1 * cv2))
+    ham = ham - real(sum(cv1 * cv2))
   enddo
 
   ham = ham * Jcoup
