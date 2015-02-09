@@ -14,12 +14,16 @@ program ising
 
   allocate(lattice(latticeSize,latticeSize))
   lattice=1
+  lattice(:,1)=0
+  lattice(:,latticeSize)=0
+  lattice(1,:)=0
+  lattice(latticeSize,:)=0
 
   do ii=0,iters
       Call random_seed(n)
       Call random_number(rand_loc)
-      rand_loc=rand_loc*latticeSize
-      rand_loc_int=int(rand_loc)+1
+      rand_loc=rand_loc*(latticeSize-2)
+      rand_loc_int=int(rand_loc)+2
       print*, rand_loc_int
   end do
 
