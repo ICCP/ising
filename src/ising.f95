@@ -15,13 +15,15 @@ program ising
   k=1             !Nomarlized Boltzman Constant
   temp=1          !Tempereature of simulation
   B=1/(k*temp)    !constant of temp and boltman
-
+  energy_sum=0
   allocate(lattice(latticeSize,latticeSize))
   lattice=1
   lattice(:,1)=0
   lattice(:,latticeSize)=0
   lattice(1,:)=0
   lattice(latticeSize,:)=0
+   
+  call energy
 
   do ii=0,iters
       Call random_seed(n1)
@@ -30,6 +32,7 @@ program ising
       rand_loc_int=int(rand_loc)+2
       call del_energy
       call flip_bit
+      print*,'energy:',energy_sum
   end do
 end program 
 
@@ -61,6 +64,7 @@ subroutine flip_bit
     
     if (del_e .lt. 0) then  
         lattice(rand_loc_int(1),rand_loc_int(2))=-spin
+        energy_sum=energy_sum+del_e
         print*,'flip neg_temp'
     else
         temp_prob=exp(-B*del_e)
@@ -69,8 +73,27 @@ subroutine flip_bit
         if (rand_temp .lt. temp_prob) then
             print*,'rand_temp',rand_temp,'=<','temp_prob',temp_prob
             lattice(rand_loc_int(1),rand_loc_int(2))=-spin
+            energy_sum=energy_sum+del_e
             print*,'flip based on prob'
         end if 
     end if 
 end subroutine 
 
+subroutine energy
+ 
+  use global 
+
+  do ii=2,latticeSize-1
+      do jj=2,latticeSize-1
+          spin=lattice(ii,jj)
+          h1=lattice(ii+1,jj+1)
+          h2=lattice(ii+1,jj-1)
+          h3=lattice(ii-1,jj+1)
+          h4=lattice(ii-1,jj-1)
+          energy_sum=energy_sum+spin*(h1+h2*h3+h4)
+      end do
+  end do
+
+  print*,'energy_sum',energy_sum
+
+end subroutine
