@@ -3,36 +3,78 @@ program ising
   use plot
   implicit none
 
-  integer              :: nx,ny
   integer, allocatable :: sigma(:,:)
-  real, parameter      :: INTER = 1
-  real, parameter      :: FIELD = 0
-  real, parameter      :: BETA  = 1E-2
-  real, parameter      :: E     = exp(1.0)
+  integer              :: nx,ny
+  integer              :: nsteps
+  real(8)              :: inter
+  real(8)              :: field
+  real(8)              :: beta
+  integer              :: iostatus
+  integer              :: u
+  character(64)        :: a,b
 
-  nx = 100
-  ny = 100
+  ! Default options
+  nx    = 100
+  ny    = 100
+  nsteps= 0
+  inter = 1
+  field = 0
+  beta  = 1E-1
+
+  if (iargc()>0) then
+    open(unit=u,file=getarg())
+    ! Read in options
+    ! Format is:
+    ! <variable to change> <whitespace> <value to give variable>
+    ! Input that doesn't make sense is ignored
+    do
+      ! Read in two strings
+      read (*,*,IOSTAT=iostatus) a,b
+      ! EOF ends input
+      if (iostatus<0) then
+        exit
+      ! Parse input
+      else
+        if (a == 'nx') then
+          read (b,*,IOSTAT=iostatus) nx
+        end if
+        if (a == 'ny') then
+          read (b,*,IOSTAT=iostatus) ny
+        end if
+        if (a == 'nsteps') then
+          read (b,*,IOSTAT=iostatus) nsteps
+        end if
+        if (a == 'inter') then
+          read (b,*,IOSTAT=iostatus) inter
+        end if
+        if (a == 'field') then
+          read (b,*,IOSTAT=iostatus) field
+        end if
+        if (a == 'beta') then
+          read (b,*,IOSTAT=iostatus) beta
+        end if
+        if (iostatus/=0) then
+          cycle
+        end if
+      end if
+    end do
+  end if
 
   allocate (sigma(nx,ny))
 
   call plot_init(nx,ny)
-  call montecarlo(sigma)
+  call montecarlo(nsteps,sigma)
   call plot_close()
 
   deallocate (sigma)
 
 contains
-  subroutine montecarlo(sigma)
-    integer, intent(inout) :: sigma(:,:)
-    integer                :: nx,ny
+  subroutine montecarlo()
     integer                :: i,j,k
     integer, allocatable   :: newsigma(:,:)
     real, allocatable      :: tmparr(:,:)
     real                   :: tmp
-    real                   :: Ediff
-
-    nx = size(sigma,1)
-    ny = size(sigma,2)
+    real(8)                :: Ediff
 
     ! Initialize sigma randomly
 !    allocate(tmparr(nx,ny))
@@ -53,7 +95,7 @@ contains
 
     ! Repeat until a set number of states have been tried (or criteria met)
     allocate(newsigma(nx,ny))
-    do k=1,1000000
+    do k=1,nsteps
       ! Determine new state by flipping a random spin
       call random_number(tmp)
       i = ceiling(tmp*nx)
@@ -68,7 +110,7 @@ contains
       Ediff = neighb_contrib(i,j,newsigma) + field_contrib(i,j,newsigma) &
               - neighb_contrib(i,j,sigma) - field_contrib(i,j,sigma)
       call random_number(tmp)
-      if (tmp < E**(-BETA*Ediff)) then
+      if (tmp < exp(-BETA*Ediff)) then
         sigma = newsigma
       end if
 
@@ -102,7 +144,7 @@ contains
     integer, intent(in) :: i,j
     integer, intent(in) :: sigma(:,:)
     integer             :: nx,ny
-    real                :: contrib
+    real(8)             :: contrib
 
     nx=size(sigma,1)
     ny=size(sigma,2)
@@ -128,7 +170,7 @@ contains
   function field_contrib(i,j,sigma) result(contrib)
     integer, intent(in) :: i,j
     integer, intent(in) :: sigma(:,:)
-    real                :: contrib
+    real(8)             :: contrib
 
     contrib = 0
 
@@ -139,7 +181,7 @@ contains
   function hamiltonian(sigma) result(energy)
     integer, intent(in) :: sigma(nx,ny)
     integer             :: i,j
-    real                :: energy
+    real(8)             :: energy
 
     energy = 0
 
