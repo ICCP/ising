@@ -12,6 +12,7 @@ program ising
   integer              :: iostatus
   integer              :: u
   character(64)        :: a,b
+  character(64)        :: fname
 
   ! Default options
   nx    = 100
@@ -22,14 +23,15 @@ program ising
   beta  = 1E-1
 
   if (iargc()>0) then
-    open(unit=u,file=getarg())
+    call getarg(1,fname)
+    open(unit=u,file=fname)
     ! Read in options
     ! Format is:
     ! <variable to change> <whitespace> <value to give variable>
     ! Input that doesn't make sense is ignored
     do
       ! Read in two strings
-      read (*,*,IOSTAT=iostatus) a,b
+      read (u,*,IOSTAT=iostatus) a,b
       ! EOF ends input
       if (iostatus<0) then
         exit
@@ -60,10 +62,18 @@ program ising
     end do
   end if
 
+
+  write (*,*) "nx=", nx
+  write (*,*) "ny=", ny
+  write (*,*) "nsteps=", nsteps
+  write (*,*) "inter=", inter
+  write (*,*) "field=", field
+  write (*,*) "beta=", beta
+
   allocate (sigma(nx,ny))
 
   call plot_init(nx,ny)
-  call montecarlo(nsteps,sigma)
+  call montecarlo()
   call plot_close()
 
   deallocate (sigma)
@@ -77,17 +87,17 @@ contains
     real(8)                :: Ediff
 
     ! Initialize sigma randomly
-!    allocate(tmparr(nx,ny))
-!    call init_random_seed()
-!    call random_number(tmparr)
-!    sigma = floor(tmparr*2)*2-1
-!    deallocate(tmparr)
+    allocate(tmparr(nx,ny))
+    call init_random_seed()
+    call random_number(tmparr)
+    sigma = floor(tmparr*2)*2-1
+    deallocate(tmparr)
     ! Initialize sigma as all up
-    do j=1,ny
-      do i=1,nx
-        sigma(i,j)=1
-      end do
-    end do
+!    do j=1,ny
+!      do i=1,nx
+!        sigma(i,j)=1
+!      end do
+!    end do
 
     ! Print out initial conditions
     call plot_lattice(sigma)
@@ -104,31 +114,30 @@ contains
 
       ! Determine whether to accept or reject new state
       ! If the energy is less, stay
-      ! Else, stay with probability of e^{-beta*(H_1-H_0)}
+      ! Else, stay with probability of exp(-beta*(H_1-H_0))
       newsigma = sigma
       newsigma(i,j) = -sigma(i,j)
-      Ediff = neighb_contrib(i,j,newsigma) + field_contrib(i,j,newsigma) &
-              - neighb_contrib(i,j,sigma) - field_contrib(i,j,sigma)
+      Ediff =   neighb_contrib(i,j,newsigma) + field_contrib(i,j,newsigma) &
+              - neighb_contrib(i,j,sigma)    - field_contrib(i,j,sigma)
       call random_number(tmp)
-      if (tmp < exp(-BETA*Ediff)) then
+      if (tmp < exp(-beta*Ediff)) then
         sigma = newsigma
       end if
 
-      write(*,*) magnetization(sigma)
+      write(*,*) magnetization()
     end do
     deallocate(newsigma)
-    !call sigmaprint(sigma)
+    !call sigmaprint()
     call plbop()
     call plot_lattice(sigma)
     call pleop()
   end subroutine montecarlo
 
-  subroutine sigmaprint(sigma)
-    integer, intent(in) :: sigma(:,:)
-    integer             :: i,j
+  subroutine sigmaprint()
+    integer :: i,j
 
-    do j=1,size(sigma,2)
-      do i=1,size(sigma,1)
+    do j=1,ny
+      do i=1,nx
         if (sigma(i,j) == 1) then
           write(*,"(a)",advance='no') "+"
         end if
@@ -140,53 +149,48 @@ contains
     end do
   end subroutine sigmaprint
 
-  function neighb_contrib(i,j,sigma) result(contrib)
+  function neighb_contrib(i,j,s) result(contrib)
     integer, intent(in) :: i,j
-    integer, intent(in) :: sigma(:,:)
-    integer             :: nx,ny
+    integer, intent(in) :: s(:,:)
     real(8)             :: contrib
-
-    nx=size(sigma,1)
-    ny=size(sigma,2)
 
     contrib = 0
 
     ! Interaction between nearest neighbors
     if (i /= 1) then
-      contrib = contrib - INTER*sigma(i,j)*sigma(i-1,j)
+      contrib = contrib - inter*s(i,j)*s(i-1,j)
     end if
     if (j /= 1) then
-      contrib = contrib - INTER*sigma(i,j)*sigma(i,j-1)
+      contrib = contrib - inter*s(i,j)*s(i,j-1)
     end if
     if (i /= nx) then
-      contrib = contrib - INTER*sigma(i,j)*sigma(i+1,j)
+      contrib = contrib - inter*s(i,j)*s(i+1,j)
     end if
     if (j /= ny) then
-      contrib = contrib - INTER*sigma(i,j)*sigma(i,j+1)
+      contrib = contrib - inter*s(i,j)*s(i,j+1)
     end if
 
   end function neighb_contrib
 
-  function field_contrib(i,j,sigma) result(contrib)
+  function field_contrib(i,j,s) result(contrib)
     integer, intent(in) :: i,j
-    integer, intent(in) :: sigma(:,:)
+    integer, intent(in) :: s(:,:)
     real(8)             :: contrib
 
     contrib = 0
 
     ! Interaction with external field
-    contrib = contrib - FIELD*sigma(i,j)
+    contrib = contrib - field*s(i,j)
   end function field_contrib
 
-  function hamiltonian(sigma) result(energy)
-    integer, intent(in) :: sigma(nx,ny)
-    integer             :: i,j
-    real(8)             :: energy
+  function hamiltonian() result(energy)
+    integer :: i,j
+    real(8) :: energy
 
     energy = 0
 
-    do j=1,size(sigma,2)
-      do i=1,size(sigma,1)
+    do j=1,ny
+      do i=1,nx
         ! neigb_contrib is halved to prevent double counting
         energy = energy + 0.5*neighb_contrib(i,j,sigma)
         energy = energy + field_contrib(i,j,sigma)
@@ -194,18 +198,17 @@ contains
     end do
   end function hamiltonian
 
-  function magnetization(sigma) result(mag)
-    integer, intent(in) :: sigma(:,:)
+  function magnetization() result(mag)
     integer :: i,j
     integer :: m
     real(8) :: mag
 
     m = 0
-    do j=1,size(sigma,2)
-      do i=1,size(sigma,1)
+    do j=1,ny
+      do i=1,nx
         m=m+sigma(i,j)
       end do
     end do
-    mag = dble(m)/size(sigma)
+    mag = dble(m)/(nx*ny)
   end function magnetization
 end program ising
