@@ -3,7 +3,7 @@ FFLAGS  = -Wall -Wextra -march=native -O3 -fimplicit-none
 #FFLAGS += -pedantic -fbounds-check -fmax-errors=1 -g
 #FFLAGS += $(shell pkg-config --cflags plplotd-f95)
 #LDFLAGS = $(shell pkg-config --libs plplotd-f95)
-LIBS    =
+BINDIR := bin
 
 COMPILE = $(FC) $(FFLAGS)
 LINK = $(FC) $(LDFLAGS)
