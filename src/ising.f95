@@ -1,6 +1,5 @@
 program ising
   use rand_tools
-  use plot
   implicit none
 
   integer, allocatable :: sigma(:,:)
@@ -10,21 +9,25 @@ program ising
   real(8)              :: field
   real(8)              :: beta
   integer              :: iostatus
-  integer              :: u
+  integer              :: uin,uout
   character(64)        :: a,b
-  character(64)        :: fname
+  character(64)        :: finname,foutname
+
+  uin  = 50
+  uout = 51
 
   ! Default options
-  nx    = 100
-  ny    = 100
-  nsteps= 0
-  inter = 1
-  field = 0
-  beta  = 1E-1
+  nx       = 10
+  ny       = 10
+  nsteps   = 0
+  inter    = 1
+  field    = 0
+  beta     = 1E0
+  foutname = "out"
 
   if (iargc()>0) then
-    call getarg(1,fname)
-    open(unit=u,file=fname)
+    call getarg(1,finname)
+    open(unit=uin,file=finname)
     ! Read in options
     ! Format is:
     ! <variable to change> <whitespace> <value to give variable>
@@ -33,7 +36,7 @@ program ising
     ! TODO: Allow specifying output (e.g. Magnetization file, images, etc.)
     do
       ! Read in two strings
-      read (u,*,IOSTAT=iostatus) a,b
+      read (uin,*,IOSTAT=iostatus) a,b
       ! EOF ends input
       if (iostatus<0) then
         exit
@@ -62,6 +65,7 @@ program ising
         end if
       end if
     end do
+    close(unit=uin)
   end if
 
   ! Output input
@@ -73,13 +77,14 @@ program ising
   write (*,*) "# field=", field
   write (*,*) "# beta=", beta
 
-  allocate (sigma(nx,ny))
+  allocate(sigma(nx,ny))
+  open(unit=uout,file=foutname,form='unformatted')
   ! TODO: initialize sigma separately
+  write (unit=uout) nx,ny
 
-  call plot_init(nx,ny)
   call montecarlo()
-  call plot_close()
 
+  close(unit=uout)
   deallocate (sigma)
 
 contains
@@ -102,10 +107,7 @@ contains
 !        sigma(i,j)=1
 !      end do
 !    end do
-
-    ! Print out initial conditions
-    call plot_lattice(sigma)
-    call pleop()
+    write (unit=uout) sigma
 
     ! Repeat until a set number of states have been tried (or criteria met)
     allocate(newsigma(nx,ny))
@@ -127,15 +129,10 @@ contains
       if (tmp < exp(-beta*Ediff)) then
         sigma = newsigma
       end if
-
-      write(*,*) magnetization()
     end do
     deallocate(newsigma)
 
-    ! Create image
-    call plbop()
-    call plot_lattice(sigma)
-    call pleop()
+    write (unit=uout) sigma
   end subroutine montecarlo
 
   function neighb_contrib(i,j,s) result(contrib)
@@ -186,18 +183,4 @@ contains
       end do
     end do
   end function hamiltonian
-
-  function magnetization() result(mag)
-    integer :: i,j
-    integer :: m
-    real(8) :: mag
-
-    m = 0
-    do j=1,ny
-      do i=1,nx
-        m=m+sigma(i,j)
-      end do
-    end do
-    mag = dble(m)/(nx*ny)
-  end function magnetization
 end program ising
