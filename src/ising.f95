@@ -12,6 +12,9 @@ program ising
   integer              :: uin,uout
   character(64)        :: a,b
   character(64)        :: finname,foutname
+  integer              :: initmode
+
+  call init_random_seed()
 
   uin  = 50
   uout = 51
@@ -24,6 +27,7 @@ program ising
   field    = 0
   beta     = 1E0
   foutname = "out"
+  initmode = 1
 
   if (iargc()>0) then
     call getarg(1,finname)
@@ -33,7 +37,6 @@ program ising
     ! <variable to change> <whitespace> <value to give variable>
     ! Input that doesn't make sense is ignored
     ! TODO: Work on handling weird input files
-    ! TODO: Allow specifying output (e.g. Magnetization file, images, etc.)
     do
       ! Read in two strings
       read (uin,*,IOSTAT=iostatus) a,b
@@ -60,6 +63,9 @@ program ising
         if (a == 'beta') then
           read (b,*,IOSTAT=iostatus) beta
         end if
+        if (a == 'initmode') then
+          read (b,*,IOSTAT=iostatus) initmode
+        end if
         if (iostatus/=0) then
           cycle
         end if
@@ -79,34 +85,47 @@ program ising
 
   allocate(sigma(nx,ny))
   open(unit=uout,file=foutname,form='unformatted')
-  ! TODO: initialize sigma separately
   write (unit=uout) nx,ny
 
+  call initialize(initmode)
   call montecarlo()
 
   close(unit=uout)
   deallocate (sigma)
 
 contains
+  ! Initialize sigma
+  ! initmode - specifies the way in which we will initialize the array
+  !   1: every spin is randomly assigned
+  !   2: every spin is up
+  !   3: every spin is down
+  !   default: 1
+  subroutine initialize(initmode)
+    integer, intent(in) :: initmode
+    real, allocatable   :: tmparr(:,:)
+
+    if (initmode==2) then ! up
+      sigma=1
+    else if (initmode==3) then ! down
+      sigma=-1
+    else ! random (default)
+      allocate(tmparr(nx,ny))
+      call random_number(tmparr)
+      sigma = floor(tmparr*2)*2-1
+      deallocate(tmparr)
+    end if
+  end subroutine initialize
+
+  ! Flip a random spin
+  ! If that was energetically favorable, keep it
+  ! If not, keep it depending on temperature and energy change
+  ! Repeat for nsteps
   subroutine montecarlo()
     integer                :: i,j,k
     integer, allocatable   :: newsigma(:,:)
-    real, allocatable      :: tmparr(:,:)
     real                   :: tmp
     real(8)                :: Ediff
 
-    ! Initialize sigma randomly
-    allocate(tmparr(nx,ny))
-    call init_random_seed()
-    call random_number(tmparr)
-    sigma = floor(tmparr*2)*2-1
-    deallocate(tmparr)
-    ! Initialize sigma as all up
-!    do j=1,ny
-!      do i=1,nx
-!        sigma(i,j)=1
-!      end do
-!    end do
     write (unit=uout) sigma
 
     ! Repeat until a set number of states have been tried (or criteria met)

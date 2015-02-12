@@ -5,10 +5,11 @@ program post
   integer, allocatable :: sigma(:,:)
   integer              :: uin
   integer              :: iostatus
+
   uin = 50
+
   open(unit=uin,file='out',form='unformatted')
   read (unit=uin) nx,ny
-  write(*,*) nx,ny
   allocate(sigma(nx,ny))
   call plot_init(nx,ny)
 
@@ -23,7 +24,6 @@ program post
       call plbop()
       call plot_lattice(sigma)
       call pleop()
-      write (*,*) ""
     end if
   end do
 
