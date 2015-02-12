@@ -29,6 +29,8 @@ program ising
     ! Format is:
     ! <variable to change> <whitespace> <value to give variable>
     ! Input that doesn't make sense is ignored
+    ! TODO: Work on handling weird input files
+    ! TODO: Allow specifying output (e.g. Magnetization file, images, etc.)
     do
       ! Read in two strings
       read (u,*,IOSTAT=iostatus) a,b
@@ -62,15 +64,17 @@ program ising
     end do
   end if
 
-
-  write (*,*) "nx=", nx
-  write (*,*) "ny=", ny
-  write (*,*) "nsteps=", nsteps
-  write (*,*) "inter=", inter
-  write (*,*) "field=", field
-  write (*,*) "beta=", beta
+  ! Output input
+  write (*,*) "# Simulation Parameters"
+  write (*,*) "# nx=", nx
+  write (*,*) "# ny=", ny
+  write (*,*) "# nsteps=", nsteps
+  write (*,*) "# inter=", inter
+  write (*,*) "# field=", field
+  write (*,*) "# beta=", beta
 
   allocate (sigma(nx,ny))
+  ! TODO: initialize sigma separately
 
   call plot_init(nx,ny)
   call montecarlo()
@@ -127,27 +131,12 @@ contains
       write(*,*) magnetization()
     end do
     deallocate(newsigma)
-    !call sigmaprint()
+
+    ! Create image
     call plbop()
     call plot_lattice(sigma)
     call pleop()
   end subroutine montecarlo
-
-  subroutine sigmaprint()
-    integer :: i,j
-
-    do j=1,ny
-      do i=1,nx
-        if (sigma(i,j) == 1) then
-          write(*,"(a)",advance='no') "+"
-        end if
-        if (sigma(i,j) == -1) then
-          write(*,"(a)",advance='no') "-"
-        end if
-      end do
-      write(*,*)
-    end do
-  end subroutine sigmaprint
 
   function neighb_contrib(i,j,s) result(contrib)
     integer, intent(in) :: i,j
@@ -191,7 +180,7 @@ contains
 
     do j=1,ny
       do i=1,nx
-        ! neigb_contrib is halved to prevent double counting
+        ! neighb_contrib is halved to prevent double counting
         energy = energy + 0.5*neighb_contrib(i,j,sigma)
         energy = energy + field_contrib(i,j,sigma)
       end do
