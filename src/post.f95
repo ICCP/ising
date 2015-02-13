@@ -1,33 +1,47 @@
 program post
   use plot
 
-  integer              :: nx,ny
-  integer, allocatable :: sigma(:,:)
-  integer              :: uin
-  integer              :: iostatus
+  integer             :: i
+  integer             :: nx,ny,nsteps
+  integer,allocatable :: sigma(:,:)
+  integer             :: uin
+  integer             :: iostatus
+  real(8),allocatable :: m(:)
+  integer             :: step,x,y
 
   uin = 50
 
-  open(unit=uin,file='out',form='unformatted')
-  read (unit=uin) nx,ny
+  open(unit=uin,file='out',form='unformatted',access='stream',action='read')
+  read(unit=uin) nx,ny,nsteps
+
   allocate(sigma(nx,ny))
+  allocate(m(nsteps))
   call plot_init(nx,ny)
 
+  read(unit=uin) sigma
+  i=0
   do
-    read (unit=uin,iostat=iostatus) sigma
-    if (iostatus>0) then
-      write (*,*) "problem!"
+    i = i+1
+    read(unit=uin,iostat=iostatus) step,x,y
+
+    if(iostatus>0) then
+      write(0,*) 'There was a problem reading in the file'
       call exit(iostatus)
-    else if (iostatus<0) then
+    else if(iostatus<0) then
       exit
     else
-      call plbop()
-      call plot_lattice(sigma)
-      call pleop()
+      sigma(x,y) = -sigma(x,y)
+      m(i) = magnetization()
+      write(*,*) step,m(i)
+
+!      call plbop()
+!      call plot_lattice(sigma)
+!      call pleop()
     end if
   end do
 
   call plot_close()
+  deallocate(m)
   deallocate(sigma)
   close(unit=uin)
 

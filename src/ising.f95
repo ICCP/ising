@@ -2,19 +2,21 @@ program ising
   use rand_tools
   implicit none
 
-  integer, allocatable :: sigma(:,:)
-  integer              :: nx,ny
-  integer              :: nsteps
-  real(8)              :: inter
-  real(8)              :: field
-  real(8)              :: beta
-  integer              :: iostatus
-  integer              :: uin,uout
-  character(64)        :: a,b
-  character(64)        :: finname,foutname
-  integer              :: initmode
+  integer,allocatable :: sigma(:,:)
+  integer             :: nx,ny
+  integer             :: nsteps
+  real(8)             :: inter
+  real(8)             :: field
+  real(8)             :: beta
+  integer             :: iostatus
+  integer             :: uin,uout
+  character(64)       :: a,b
+  character(64)       :: finname,foutname
+  integer             :: initmode
+  integer             :: numout
 
   call init_random_seed()
+  numout = 0
 
   uin  = 50
   uout = 51
@@ -26,12 +28,12 @@ program ising
   inter    = 1
   field    = 0
   beta     = 1E0
-  foutname = "out"
+  foutname = 'out'
   initmode = 1
 
-  if (iargc()>0) then
+  if(iargc()>0) then
     call getarg(1,finname)
-    open(unit=uin,file=finname)
+    open(unit=uin,file=finname,action='read')
     ! Read in options
     ! Format is:
     ! <variable to change> <whitespace> <value to give variable>
@@ -39,61 +41,50 @@ program ising
     ! TODO: Work on handling weird input files
     do
       ! Read in two strings
-      read (uin,*,IOSTAT=iostatus) a,b
+      read(uin,*,IOSTAT=iostatus) a,b
       ! EOF ends input
-      if (iostatus<0) then
+      if(iostatus<0) then
         exit
       ! Parse input
       else
-        if (a == 'nx') then
-          read (b,*,IOSTAT=iostatus) nx
-        end if
-        if (a == 'ny') then
-          read (b,*,IOSTAT=iostatus) ny
-        end if
-        if (a == 'nsteps') then
-          read (b,*,IOSTAT=iostatus) nsteps
-        end if
-        if (a == 'inter') then
-          read (b,*,IOSTAT=iostatus) inter
-        end if
-        if (a == 'field') then
-          read (b,*,IOSTAT=iostatus) field
-        end if
-        if (a == 'beta') then
-          read (b,*,IOSTAT=iostatus) beta
-        end if
-        if (a == 'initmode') then
-          read (b,*,IOSTAT=iostatus) initmode
-        end if
-        if (a == 'foutname') then
-          read (b,*,IOSTAT=iostatus) foutname
-        end if
-        if (iostatus/=0) then
-          cycle
-        end if
+        if(a == 'nx')       read(b,*,IOSTAT=iostatus) nx
+        if(a == 'ny')       read(b,*,IOSTAT=iostatus) ny
+        if(a == 'nsteps')   read(b,*,IOSTAT=iostatus) nsteps
+        if(a == 'inter')    read(b,*,IOSTAT=iostatus) inter
+        if(a == 'field')    read(b,*,IOSTAT=iostatus) field
+        if(a == 'beta')     read(b,*,IOSTAT=iostatus) beta
+        if(a == 'initmode') read(b,*,IOSTAT=iostatus) initmode
+        if(a == 'foutname') read(b,*,IOSTAT=iostatus) foutname
+        if(iostatus/=0)     cycle
       end if
     end do
     close(unit=uin)
   end if
 
   ! Output input
-  write (*,*) "# Simulation Parameters"
-  write (*,*) "# nx=", nx
-  write (*,*) "# ny=", ny
-  write (*,*) "# nsteps=", nsteps
-  write (*,*) "# inter=", inter
-  write (*,*) "# field=", field
-  write (*,*) "# beta=", beta
-  write (*,*) "# initmode=", initmode
-  write (*,*) "# foutname=", foutname
+  write(*,*) '# Simulation Parameters'
+  write(*,*) '# nx=', nx
+  write(*,*) '# ny=', ny
+  write(*,*) '# nsteps=', nsteps
+  write(*,*) '# inter=', inter
+  write(*,*) '# field=', field
+  write(*,*) '# beta=', beta
+  write(*,*) '# initmode=', initmode
+  write(*,*) '# foutname=', foutname
 
   allocate(sigma(nx,ny))
-  open(unit=uout,file=foutname,form='unformatted')
-  write (unit=uout) nx,ny
+  open(unit=uout,file=foutname,status='replace',form='unformatted',access='stream',action='write')
+  write(unit=uout) nx,ny,numout
 
   call initialize(initmode)
+  write(unit=uout) sigma
+
   call montecarlo()
+
+  rewind(unit=uout)
+  write(unit=uout) nx,ny,numout
+
+  write(*,*) nx,ny,numout
 
   close(unit=uout)
   deallocate (sigma)
@@ -109,10 +100,10 @@ contains
     integer, intent(in) :: initmode
     real, allocatable   :: tmparr(:,:)
 
-    if (initmode==2) then ! up
-      sigma=1
-    else if (initmode==3) then ! down
-      sigma=-1
+    if(initmode==2) then ! up
+      sigma = 1
+    else if(initmode==3) then ! down
+      sigma = -1
     else ! random (default)
       allocate(tmparr(nx,ny))
       call random_number(tmparr)
@@ -126,12 +117,11 @@ contains
   ! If not, keep it depending on temperature and energy change
   ! Repeat for nsteps
   subroutine montecarlo()
-    integer                :: i,j,k
-    integer, allocatable   :: newsigma(:,:)
-    real                   :: tmp
-    real(8)                :: Ediff
+    integer             :: i,j,k
+    integer,allocatable :: newsigma(:,:)
+    real                :: tmp
+    real(8)             :: Ediff
 
-    write (unit=uout) sigma
 
     ! Repeat until a set number of states have been tried (or criteria met)
     allocate(newsigma(nx,ny))
@@ -150,42 +140,35 @@ contains
       Ediff =   neighb_contrib(i,j,newsigma) + field_contrib(i,j,newsigma) &
               - neighb_contrib(i,j,sigma)    - field_contrib(i,j,sigma)
       call random_number(tmp)
-      if (tmp < exp(-beta*Ediff)) then
+      if(tmp < exp(-beta*Ediff)) then
         sigma = newsigma
+        numout=numout+1
+        write(unit=uout) k,i,j
       end if
     end do
     deallocate(newsigma)
 
-    write (unit=uout) sigma
   end subroutine montecarlo
 
   function neighb_contrib(i,j,s) result(contrib)
-    integer, intent(in) :: i,j
-    integer, intent(in) :: s(:,:)
-    real(8)             :: contrib
+    integer,intent(in) :: i,j
+    integer,intent(in) :: s(:,:)
+    real(8)            :: contrib
 
     contrib = 0
 
     ! Interaction between nearest neighbors
-    if (i /= 1) then
-      contrib = contrib - inter*s(i,j)*s(i-1,j)
-    end if
-    if (j /= 1) then
-      contrib = contrib - inter*s(i,j)*s(i,j-1)
-    end if
-    if (i /= nx) then
-      contrib = contrib - inter*s(i,j)*s(i+1,j)
-    end if
-    if (j /= ny) then
-      contrib = contrib - inter*s(i,j)*s(i,j+1)
-    end if
+    if(i /= 1)  contrib = contrib - inter*s(i,j)*s(i-1,j)
+    if(j /= 1)  contrib = contrib - inter*s(i,j)*s(i,j-1)
+    if(i /= nx) contrib = contrib - inter*s(i,j)*s(i+1,j)
+    if(j /= ny) contrib = contrib - inter*s(i,j)*s(i,j+1)
 
   end function neighb_contrib
 
   function field_contrib(i,j,s) result(contrib)
-    integer, intent(in) :: i,j
-    integer, intent(in) :: s(:,:)
-    real(8)             :: contrib
+    integer,intent(in) :: i,j
+    integer,intent(in) :: s(:,:)
+    real(8)            :: contrib
 
     contrib = 0
 
