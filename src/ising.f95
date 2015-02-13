@@ -66,6 +66,9 @@ program ising
         if (a == 'initmode') then
           read (b,*,IOSTAT=iostatus) initmode
         end if
+        if (a == 'foutname') then
+          read (b,*,IOSTAT=iostatus) foutname
+        end if
         if (iostatus/=0) then
           cycle
         end if
@@ -82,6 +85,8 @@ program ising
   write (*,*) "# inter=", inter
   write (*,*) "# field=", field
   write (*,*) "# beta=", beta
+  write (*,*) "# initmode=", initmode
+  write (*,*) "# foutname=", foutname
 
   allocate(sigma(nx,ny))
   open(unit=uout,file=foutname,form='unformatted')
