@@ -84,8 +84,6 @@ program ising
   rewind(unit=uout)
   write(unit=uout) nx,ny,numout
 
-  write(*,*) nx,ny,numout
-
   close(unit=uout)
   deallocate (sigma)
 
