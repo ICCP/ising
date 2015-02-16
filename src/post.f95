@@ -48,7 +48,7 @@ program post
   read(unit=uin) nx,ny,nsteps
 
   allocate(sigma(nx,ny))
-  allocate(m(nsteps))
+  allocate(m(nsteps+1))
   call plot_init(nx,ny)
 
   call plbop()
@@ -56,7 +56,8 @@ program post
   call pleop()
 
   read(unit=uin) sigma
-  i=0
+  i=1
+  write(umag,*) step,m(i)
   do
     i = i+1
     read(unit=uin,iostat=iostatus) step,x,y
