@@ -9,17 +9,17 @@ program ising
   real(8)             :: field
   real(8)             :: beta
   integer             :: iostatus
-  integer             :: uin,uout
+  integer             :: uopts,uout
   character(64)       :: a,b
-  character(64)       :: finname,foutname
+  character(64)       :: foptsname,foutname
   integer             :: initmode
   integer             :: numout
 
   call init_random_seed()
   numout = 0
 
-  uin  = 50
-  uout = 51
+  uopts = 50
+  uout  = 52
 
   ! Default options
   nx       = 10
@@ -32,8 +32,8 @@ program ising
   initmode = 1
 
   if(iargc()>0) then
-    call getarg(1,finname)
-    open(unit=uin,file=finname,action='read')
+    call getarg(1,foptsname)
+    open(unit=uopts,file=foptsname,action='read')
     ! Read in options
     ! Format is:
     ! <variable to change> <whitespace> <value to give variable>
@@ -41,7 +41,7 @@ program ising
     ! TODO: Work on handling weird input files
     do
       ! Read in two strings
-      read(uin,*,IOSTAT=iostatus) a,b
+      read(uopts,*,IOSTAT=iostatus) a,b
       ! EOF ends input
       if(iostatus<0) then
         exit
@@ -58,7 +58,7 @@ program ising
         if(iostatus/=0)     cycle
       end if
     end do
-    close(unit=uin)
+    close(unit=uopts)
   end if
 
   ! Output input
