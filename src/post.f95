@@ -49,15 +49,16 @@ program post
 
   allocate(sigma(nx,ny))
   allocate(m(nsteps+1))
+  read(unit=uin) sigma
   call plot_init(nx,ny)
 
   call plbop()
   call plot_lattice(sigma)
   call pleop()
 
-  read(unit=uin) sigma
   i=1
-  write(umag,*) step,m(i)
+  m(i) = magnetization()
+  write(umag,*) 0,m(i)
   do
     i = i+1
     read(unit=uin,iostat=iostatus) step,x,y
