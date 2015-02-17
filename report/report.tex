@@ -10,35 +10,30 @@
 
 \begin{document}
 
-\title{Manuscript Title:\\with Forced Linebreak}% Force line breaks with \\
-\author{Ann Author}
+\title{Modeling Ising}% Force line breaks with \\
+\author{Scott O'Connor}
 \date{\today}% It is always \today, today, but you can specify other dates manually 
 \maketitle
 
 \begin{abstract}
-An article usually includes an abstract, a concise summary of the work
-covered at length in the main body of the article. 
+Here are some cool facts about the ising model 
 \end{abstract}
 
 
-\section{First-level heading} %Title for the section
+\section{Magnetization at Different Temperatures} %Title for the section
 \label{sec:level1} %Label for the section, to be used for referencing in other parts of the document
 
-This sample document demonstrates some common uses of \LaTeX\ in documents you'll write for ICCP. Further information can be found online at the \href{http://en.wikibooks.org/wiki/LaTeX}{\LaTeX\ wikibook} or in the distribution documentation. 
+\subsection{\label{sec:level2} Temperature at 2}
 
-When we refer to commands in this example file, they always have their required formal arguments in normal \TeX{} format. In this format, \verb+#1+, \verb+#2+, etc. stand for required author-supplied arguments to commands. For example, in \verb+\section{#1}+ the \verb+#1+ stands for the title text of the author's section heading, and in \verb+\title{#1}+ the \verb+#1+ stands for the title text of the paper.
+\subsection{\label{sec:level2} Temperature at 3}
 
-Line breaks in section headings at all levels can be introduced using \textbackslash\textbackslash. A blank input line tells \TeX\ that the paragraph has ended. 
+\section{Energy at Different Temperatures}
 
-\subsection{\label{sec:level2} Second-level heading: Formatting}
+\subsection{\label{sec:level2} Temperature at 2}
 
-This file may be formatted in either the \texttt{preprint} or \texttt{reprint} style. \texttt{reprint} format mimics final journal output. The paper size may be specified with the option \texttt{letter}. These options are inserted in the square brackets inside the \texttt{\textbackslash documentclass[]\{article\}} command.
+\subsection{\label{sec:level2} Temperature at 3}
 
-\section{Math and Equations}
-Inline math may be typeset using the \verb+$+ delimiters. Bold math symbols may be achieved using the \verb+bm+ package and the \verb+\bm{#1}+ command it supplies. For instance, a bold $\alpha$ can be typeset as \verb+$\bm{\alpha}$+ giving $\bm{\alpha}$. Fraktur and Blackboard (or open face or double struck) characters should be typeset using the \verb+\mathfrak{#1}+ and \verb+\mathbb{#1}+ commands respectively. Both are supplied by the \texttt{amssymb} package. For
-example, \verb+$\mathbb{R}$+ gives $\mathbb{R}$ and \verb+$\mathfrak{G}$+ gives $\mathfrak{G}$
-
-In \LaTeX\ there are many different ways to display equations, and a few preferred ways are noted below. Displayed math will center by default. Use the class option \verb+fleqn+ to flush equations left.
+\section{Average Magnetization as a function of temperature}
 
 Below we have numbered single-line equations; this is generally the most common type of equation in \LaTeX: 
 \begin{equation} 

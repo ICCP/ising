@@ -1,0 +1,7 @@
+*.o
+src/*.o
+*.mod
+src/*.mod
+src/*.out
+
+
