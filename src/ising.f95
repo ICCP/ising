@@ -8,44 +8,52 @@ program ising
   real(8),external :: energy
   integer,external :: hfield
 
+  !Variables for main routine
   integer :: ii
   integer :: tot_energy
 
+  !output files
   open (unit = 1, file = 'energy.out',status = 'unknown')
   open (unit = 2, file = 'hfield.out',status = 'unknown')
 
-  latticeSize = 100      !Lattice Size
+  !initializing variables
   ii = 0                 !Iteration Variable
-  iters = 10000000        !Number of iterations the program runs through
+  energy_sum = 0         !Energy Sum
+  
+  !Settings
+  latticeSize = 100      !Lattice Size
+  iters = 10000000       !Number of iterations the program runs through
   rand_loc = 2           !Init Random Location Variable
-  n1 = 4                 !Random Number Generator Seed lattice
-  n2 = 2                 !Random Number Generator Seed temp
   j = 1.d0               !magnetic coeffient
   k = 1                  !Nomarlized Boltzman Constant
   temp = 2               !Tempereature of simulation
   B = 1/(k*temp)         !constant of temp and boltman
-  energy_sum = 0         !Energy Sum
 
   allocate(lattice(0:latticeSize + 1,0:latticeSize + 1))
   lattice = 0
   lattice(1:latticeSize, 1:latticeSize) = 1
-   
-  tot_energy = energy(lattice,latticeSize)
+  
+  !main program 
+  tot_energy = energy(lattice,latticeSize)!Calculate Chagnge total energy
   do ii = 0,iters
+      !generate a random location 
       Call random_number(rand_loc)
       rand_loc = rand_loc*(latticeSize)
       rand_loc_int = ceiling(rand_loc)
-      call del_energy
-      call flip_bit
+      
+      call del_energy !calculate change in energy
+      call flip_bit   !Perform metropolis test
+      
+      !Write results to file
       write (1,*),ii, energy_sum 
       write (2,*),ii, sum(lattice)/float(latticeSize**2)
 
   end do
 end program 
+!------------------------------------------------------------------------------
+subroutine del_energy!{{{
 
-subroutine del_energy
-
-  use global
+  use global, only: del_e
 
   integer :: spin,h1,h2,h3,h4
       spin = lattice(rand_loc_int(1),rand_loc_int(2))
@@ -54,9 +62,9 @@ subroutine del_energy
       h3 = lattice(rand_loc_int(1)-1,rand_loc_int(2)+1)
       h4 = lattice(rand_loc_int(1)-1,rand_loc_int(2)-1)
       del_e = 2*spin*(h1 + h2 + h3 + h4)
-end subroutine
-
-subroutine flip_bit
+end subroutine !}}}
+!------------------------------------------------------------------------------
+subroutine flip_bit !{{{
   use global
   real(KIND=8) :: boltzmann
 
@@ -73,9 +81,9 @@ subroutine flip_bit
       lattice(rand_loc_int(1),rand_loc_int(2))=-spin
       energy_sum=energy_sum+del_e
     end if 
-end subroutine 
-
-real(8) function energy(lattice1,latticeSize1)
+end subroutine !}}}
+!------------------------------------------------------------------------------
+real(8) function energy(lattice1,latticeSize1) !{{{
  
   integer :: latticeSize1
   integer,dimension(latticeSize1,latticeSize1) :: lattice1
@@ -96,4 +104,5 @@ real(8) function energy(lattice1,latticeSize1)
       end do
   end do
 
-end function
+end function !}}}
+!------------------------------------------------------------------------------
