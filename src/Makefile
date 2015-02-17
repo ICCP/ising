@@ -1,8 +1,8 @@
 FC       = gfortran
 FFLAGS   = -Wall -Wextra -march=native -O3 -fimplicit-none 
 #FFLAGS += -pedantic -fbounds-check -fmax-errors=1 -g
-FFLAGS  += $(shell pkg-config --cflags plplot-f95)
-LDFLAGS2 = $(shell pkg-config --libs plplot-f95)
+FFLAGS  += $(shell pkg-config --cflags plplotd-f95)
+LDFLAGS2 = $(shell pkg-config --libs plplotd-f95)
 LIBS     =
 
 COMPILE = $(FC) $(FFLAGS)
