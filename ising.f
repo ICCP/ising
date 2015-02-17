@@ -1,14 +1,14 @@
       PROGRAM ISING
       ! 2D Monte Carlo simulation of Ising Model with Metropolis algorithm
-      ! Program written by Tridip Das
+      ! Program written by Tridip Das (dastridi)
       ! This program calculates magnetization with temperature variation 
       ! Susceptibility, Energy and Specific heat with temperature
       ! Also finds the critical temperature at which magnetization is
-      ! lost. Scaled temperature is used here and kB assumed as 1
+      ! lost. Scaled temperature is used, Boltzmann const, kB assumed as 1
       !
         IMPLICIT NONE
       ! Variable Declaration
-        INTEGER :: I, J, M, N
+        INTEGER :: I, J, M, N ! counters
         INTEGER, ALLOCATABLE :: A(:,:),AOLD(:,:),ANEW(:,:) ! 2D array containing spins
         INTEGER :: NROWS, NCOLS ! Defining # of rows and columns
       !
@@ -20,7 +20,6 @@
         REAL :: T_INITIAL, T_FINAL, TEMP_INTERVAL, START, FINISH
       !
       !
-      !
         PRINT *, " MONTE CARLO SIMULATION OF 2D ISING MODEL "
         PRINT *, "   SIMULATION WITH METROPOLIS ALGORITHM  "
         PRINT *, "   APPLYING PERIODIC BOUNDARY CONDITION  "
@@ -28,7 +27,7 @@
         CALL CPU_TIME(START)
         PRINT *, " Start time ", START
         PRINT *, "------------------------------------------"
-      ! INPUT PARAMETERS FROM inpfile
+      ! INPUT PARAMETERS FROM inp_file
       !  OPEN(UNIT=11,FILE='inpfile',STATUS='OLD',ACTION='READ')
       ! Uncomment below lines to get input from user
       !  PRINT *, " PROVIDE THE NUMBER OF ROWS FOR ISING MODEL"
@@ -54,7 +53,7 @@
       !  CLOSE(11)
       !
         NROWS = 10 ; NCOLS = 10; 
-        NO_OF_MC_STEPS = 1000; NO_OF_ITER = 10
+        NO_OF_MC_STEPS = 1000000; NO_OF_ITER = 1
         T_INITIAL = 1.0; T_FINAL = 4.0; TEMP_INTERVAL = 0.1 
         TEMP_STEPS = INT((T_FINAL - T_INITIAL)/TEMP_INTERVAL)
       !
@@ -121,12 +120,15 @@
                     CONTINUE    
                 ENDIF
       !
-                MAGNETIZATION = SUM(AOLD(2:NROWS+1,2:NCOLS+1))/         &
-     &                                 (NROWS*NCOLS*1.0)
+                MAGNETIZATION = ABS(SUM(AOLD(2:NROWS+1,2:NCOLS+1))/     &
+     &                                 (NROWS*NCOLS*1.0))
       !
-                WRITE(33,*) TEMPERATURE, MC_ITER, MAGNETIZATION
+                IF ((MOD(NINT(TEMPERATURE*10),2) == 0) .AND.            &
+     &               MOD(MC_ITER,1000) == 0) THEN
+                        WRITE(33,*) TEMPERATURE, MC_ITER, MAGNETIZATION
+                ENDIF
       !
-           ENDDO MONTE_CARLO
+            ENDDO MONTE_CARLO
       !         
            MAG_AVG = MAG_AVG + MAGNETIZATION
            MAG2_AVG = MAG2_AVG + MAGNETIZATION**2
