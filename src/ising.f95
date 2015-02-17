@@ -14,6 +14,7 @@ program ising
   character(64)       :: foptsname,foutname
   integer             :: initmode
   integer             :: numout
+  logical             :: periodic
 
   call init_random_seed()
   numout = 0
@@ -30,6 +31,7 @@ program ising
   beta     = 1E0
   foutname = 'out'
   initmode = 1
+  periodic = .false.
 
   if(iargc()>0) then
     call getarg(1,foptsname)
@@ -55,6 +57,7 @@ program ising
         if(a == 'beta')     read(b,*,IOSTAT=iostatus) beta
         if(a == 'initmode') read(b,*,IOSTAT=iostatus) initmode
         if(a == 'foutname') read(b,*,IOSTAT=iostatus) foutname
+        if(a == 'periodic') read(b,*,IOSTAT=iostatus) periodic
         if(iostatus/=0)     cycle
       end if
     end do
@@ -71,6 +74,7 @@ program ising
   write(*,*) '# beta=', beta
   write(*,*) '# initmode=', initmode
   write(*,*) '# foutname=', foutname
+  write(*,*) '# periodic=', periodic
 
   allocate(sigma(nx,ny))
   open(unit=uout,file=foutname,status='replace',form='unformatted',access='stream',action='write')
@@ -160,6 +164,14 @@ contains
     if(j /= 1)  contrib = contrib - inter*s(i,j)*s(i,j-1)
     if(i /= nx) contrib = contrib - inter*s(i,j)*s(i+1,j)
     if(j /= ny) contrib = contrib - inter*s(i,j)*s(i,j+1)
+
+    ! Loop around the edges if using periodic boundaries
+    if(periodic) then
+      if(i == 1)  contrib = contrib - inter*s(i,j)*s(nx,j)
+      if(j == 1)  contrib = contrib - inter*s(i,j)*s(i,ny)
+      if(i == nx) contrib = contrib - inter*s(i,j)*s(1,j)
+      if(j == ny) contrib = contrib - inter*s(i,j)*s(i,1)
+    end if
 
   end function neighb_contrib
 
