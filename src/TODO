@@ -1,0 +1,4 @@
+1. Look at making reading in options file more robust
+1. Look at modularizing reading in option files (variable scope might be a problem)
+1. Add more options for post-processing
+1. plplot stuff is kinda kludged together, tidy it up
