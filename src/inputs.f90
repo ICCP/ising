@@ -3,8 +3,9 @@ module inputs
 use iso_fortran_env
 
 type :: settings_type
-  integer :: Nx, Ny
+  integer :: Nx, Ny, max_mc_iter, last_avg, n_temp
   logical :: log_flag
+  real(REAL64) :: temp_min, temp_max
 end type settings_type
 
 contains
@@ -23,7 +24,10 @@ subroutine read_settings(settings)
     call exit(10)
   endif
   read(12,*) settings%Nx, settings%Ny
-  read(12,*) log_flag
+  read(12,*) settings%temp_min, settings%temp_max, settings%n_temp
+  read(12,*) settings%max_mc_iter
+  read(12,*) settings%last_avg
+  read(12,*) settings%log_flag
   close(12)
 
   return

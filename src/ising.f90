@@ -5,10 +5,6 @@ use inputs
 
 implicit none
 !------------------------------------------------------------------------------
-! Constants
-!------------------------------------------------------------------------------
-real(REAL64), parameter :: kboltz = 8.617332478d-5 ! Boltzmann constant in eV/K
-!------------------------------------------------------------------------------
 ! Input parameters
 !------------------------------------------------------------------------------
 type(settings_type) :: settings
@@ -19,55 +15,90 @@ integer, allocatable :: spin(:,:)
 !------------------------------------------------------------------------------
 ! Local variables
 !------------------------------------------------------------------------------
-real(REAL64) :: ham, rn, flip_prb, ham_old, temp
-integer :: i, j, cnt
+real(REAL64) :: ham, rn, flip_prb, temp, dE, mag, site_norm, dT, avg_mag, avg_E
+integer :: i, j, cnt, nt
 
 write(output_unit,'(A)') '*** ICCP Project 1: Ising model ***'
 
 call read_settings(settings)
 call print_settings_summary(settings)
+call init_random_seed
 
 if (settings%log_flag) open(unit=15,file='log.out',status='unknown')
+open(unit=16,file='data.out',status='unknown')
+open(unit=17,file='avgs.out',status='unknown')
 
+site_norm = dble(settings%Nx * settings%Ny)
 allocate(spin(settings%Nx,settings%Ny))
-spin = 1
 
-cnt = 0
+dT = 0.d0
+if (settings%n_temp > 1) then
+  dT = (settings%temp_max - settings%temp_min) / dble(settings%n_temp - 1)
+endif
 
-! run the monte carlo loop
-monte_loop: do
+temp_loop: do nt = 1,settings%n_temp
+  spin = 1
+  mag = sum(spin)
+  ham = 0.d0
+  avg_mag = 0.d0
+  avg_E = 0.d0
 
-  cnt = cnt + 1
+  temp = settings%temp_min + (nt-1) * dT
 
-  ! compute energy of previous state
-  call hamiltonian(settings,spin,ham_old)
+  write(output_unit,*) temp,'(',nt,'/',settings%n_temp,')'
 
-  ! uniformly distributed random numbers give lattice site
-  ! to potentially flip
-  call random_number(rn)
-  i = floor(real(settings%Nx)*rn) + 1
-  call random_number(rn)
-  j = floor(real(settings%Ny)*rn) + 1
-
-  ! flip the spin of the (i,j)th site
-  spin(i,j) = -spin(i,j)
-
-  ! compute the new state's energy
+  ! compute initial energy
   call hamiltonian(settings,spin,ham)
+  if (settings%log_flag) write(15,*) 'Starting E =',ham
 
-  ! keep the new state if energy has decreased, otherwise
-  ! retain the new configuration with probability flip_prb
-  if (ham > ham_old) then
-    flip_prb = 0.d0
-    call random_number(rn)
-    if (rn > flip_prb) then
-      spin(i,j) = -spin(i,j)
+  ! run the monte carlo loop
+  monte_loop: do cnt = 1,settings%max_mc_iter
+
+    if (settings%log_flag) write(15,*) 'iter',cnt,' T =',temp,' E =',ham/site_norm,' M =',mag/site_norm
+
+    ! write to a data file if there is only one temperature to simulate
+    if (settings%n_temp == 1) write(16,*) cnt,temp,ham/site_norm,mag/site_norm
+
+    if (cnt > settings%max_mc_iter - settings%last_avg + 1) then
+      avg_mag = avg_mag + mag/site_norm/dble(settings%last_avg)
+      avg_E = avg_E + ham/site_norm/dble(settings%last_avg)
     endif
-  endif
-  
-enddo monte_loop
+
+    ! uniformly distributed random numbers give lattice site
+    ! to potentially flip
+    call random_number(rn)
+    i = floor(real(settings%Nx)*rn) + 1
+    call random_number(rn)
+    j = floor(real(settings%Ny)*rn) + 1
+
+    call nn_energy(settings,spin,i,j,dE)
+    if (settings%log_flag) write(15,*) 'dE =',dE
+
+    ! keep the new state if energy has decreased, otherwise
+    ! retain the new configuration with probability flip_prb
+    flip_prb = exp(-dE/temp)
+    call random_number(rn)
+    if (rn <= flip_prb) then
+      spin(i,j) = -spin(i,j)
+      ham = ham + dE
+      mag = mag + 2.d0 * dble(spin(i,j))
+    endif
+
+  enddo monte_loop
+  write(17,*) temp,avg_mag,avg_E
+enddo temp_loop
 
 if (settings%log_flag) close(15)
+close(16)
+close(17)
+
+open(unit=8,file='spin.out',status='unknown')
+do i = 1,settings%Nx
+  do j = 1,settings%Ny
+    write(8,*) i,j,spin(i,j)
+  enddo
+enddo
+close(8)
 
 call exit(0)
 
@@ -113,8 +144,6 @@ subroutine hamiltonian(settings,spin,ham)
   enddo
 
   ham = ham * Jcoup
-
-  write(output_unit,'(A,ES23.15)') 'Spin Hamiltonian: ',ham
 
   return
 end subroutine hamiltonian
@@ -176,3 +205,28 @@ subroutine init_random_seed
     lcg = int(mod(s, int(huge(0), int64)), kind(0))
   end function lcg
 end subroutine init_random_seed
+!---------------------------------------------------------------------
+! Compute nearest neighbors energy change
+!---------------------------------------------------------------------
+subroutine nn_energy(settings,spin,row,col,dE)
+  use iso_fortran_env
+  use inputs
+
+  implicit none
+
+  type(settings_type) :: settings
+  integer, dimension(settings%Nx,settings%Ny) :: spin
+  real(REAL64) :: dE
+  integer :: row, col
+
+  dE = 0.d0
+
+  if (row-1 > 0) dE = dE + spin(row-1,col) * spin(row,col)
+  if (row+1 <= settings%Nx) dE = dE + spin(row+1,col) * spin(row,col)
+  if (col-1 > 0) dE = dE + spin(row,col-1) * spin(row,col)
+  if (col+1 <= settings%Ny) dE = dE + spin(row,col+1) * spin(row,col)
+
+  dE = 2.d0 * dE
+  
+  return
+end subroutine nn_energy
