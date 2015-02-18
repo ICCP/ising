@@ -1,5 +1,5 @@
 50 50             % Nx, Ny
-2.25d0 7.d0 1      % temperature min, max, # points
+2.3d0 7.d0 1      % temperature min, max, # points
 1000000           % maximum # of MC iterations
 50000             % length of end window for averaging M, E
 .false.           % generate logfile?
