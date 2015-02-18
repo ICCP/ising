@@ -20,13 +20,10 @@ program ising
   ii = 0                 !Iteration Variable
   energy_sum = 0         !Energy Sum
   
-  !Settings
-  latticeSize = 100      !Lattice Size
-  iters = 10000000       !Number of iterations the program runs through
+  call ReadInput
+  
   rand_loc = 2           !Init Random Location Variable
   j = 1.d0               !magnetic coeffient
-  k = 1                  !Nomarlized Boltzman Constant
-  temp = 2               !Tempereature of simulation
   B = 1/(k*temp)         !constant of temp and boltman
 
   allocate(lattice(0:latticeSize + 1,0:latticeSize + 1))
@@ -50,37 +47,38 @@ program ising
 
   end do
 end program 
+
+
 !------------------------------------------------------------------------------
 subroutine del_energy!{{{
 
-  use global, only: del_e
+  use global, only: del_e,rand_loc_int,lattice
 
   integer :: spin,h1,h2,h3,h4
-      spin = lattice(rand_loc_int(1),rand_loc_int(2))
-      h1 = lattice(rand_loc_int(1)+1,rand_loc_int(2)+1)
-      h2 = lattice(rand_loc_int(1)+1,rand_loc_int(2)-1)
-      h3 = lattice(rand_loc_int(1)-1,rand_loc_int(2)+1)
-      h4 = lattice(rand_loc_int(1)-1,rand_loc_int(2)-1)
-      del_e = 2*spin*(h1 + h2 + h3 + h4)
+      
+  spin = lattice(rand_loc_int(1),rand_loc_int(2))
+  h1 = lattice(rand_loc_int(1)+1,rand_loc_int(2)+1)
+  h2 = lattice(rand_loc_int(1)+1,rand_loc_int(2)-1)
+  h3 = lattice(rand_loc_int(1)-1,rand_loc_int(2)+1)
+  h4 = lattice(rand_loc_int(1)-1,rand_loc_int(2)-1)
+  del_e = 2*spin*(h1 + h2 + h3 + h4)
+
 end subroutine !}}}
 !------------------------------------------------------------------------------
 subroutine flip_bit !{{{
-  use global
-  real(KIND=8) :: boltzmann
-
-    
+  
+  use global, only: lattice,rand_loc_int,rand_temp,energy_sum,del_e,B
+  
   integer :: spin
+  
   spin = 0
   spin = lattice(rand_loc_int(1),rand_loc_int(2))
-!   if (del_e .lt. 0) then  
-!       spin=lattice(rand_loc_int(1),rand_loc_int(2))
-!       lattice(rand_loc_int(1),rand_loc_int(2))=-spin
-!       energy_sum=energy_sum+del_e
-    call random_number(rand_temp)
-    if (exp(-B*del_e) .ge. rand_temp) then
-      lattice(rand_loc_int(1),rand_loc_int(2))=-spin
-      energy_sum=energy_sum+del_e
-    end if 
+  call random_number(rand_temp)
+  if (exp(-B*del_e) .ge. rand_temp) then
+    lattice(rand_loc_int(1),rand_loc_int(2))=-spin
+    energy_sum=energy_sum+del_e
+  end if
+
 end subroutine !}}}
 !------------------------------------------------------------------------------
 real(8) function energy(lattice1,latticeSize1) !{{{
@@ -105,4 +103,19 @@ real(8) function energy(lattice1,latticeSize1) !{{{
   end do
 
 end function !}}}
+!------------------------------------------------------------------------------
+subroutine ReadInput !{{{
+    
+    use global, only: latticeSize,iters,k,temp
+
+    open(3,file="ising.inp")
+
+    read(3,*) latticeSize
+    read(3,*) iters
+    read(3,*) k
+    read(3,*) temp
+
+    close(3)
+
+end subroutine !}}}
 !------------------------------------------------------------------------------

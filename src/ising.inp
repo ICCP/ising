@@ -1,0 +1,4 @@
+100     !Lattice Size
+10000   !Number of Iterations
+1       !Boltzman constant
+2       !temperature
