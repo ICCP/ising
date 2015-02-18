@@ -2,6 +2,8 @@ program isingtest
 
 IMPLICIT NONE
 
+!Definition of all varables, arrays and strings
+
 integer :: i, j, flipSpins, k, Tstep, everyHundred
 integer :: size, i_swap_value, j_swap_value
 integer :: avgCount, mCount
@@ -20,50 +22,65 @@ character(len=10) ::  out_file
 character(len=7) ::  out_file_base
 character(len=3) ::  out_file_no
 
+!Dimension of square array
 size=100
 
+!Boltzmann Constant
 kB=1
 
 out_file_base="Results"
 
 open (unit=out_unit2,file="avg_m_values",action="write",status="replace")
 
+!Loops through spin flip iterations for T=1.0 and T-2.0
 do Tstep=1,2
 
    k=1
 
    T=Tstep
    beta=1/(kB*T)
+
+! Creates new outfile for each T with m values 
+! for each one hundred flips
    write(out_file_no,"(F3.1)") T
    out_file=out_file_base//out_file_no
    open (unit=out_unit,file=out_file,action="write",status="replace")
+
+!Initiate array to have every value equal to positive 1, spin up
    do i=1,size
       do j=1,size
          spins(i,j)=1
       end do
    end do
-   
+  
+! Resets variables 
    m_Avg=0
    everyHundred=1
    avgCount=1
    mCount=1 
    avgM=0   
    diffSqSum=0 
+  
+! Iterate 5 million times, flipping a random spin each time
    do flipSpins=1,5000000
   
    rand = get_random_number()
 
+! Selects random numbers and uses to select i,j coors to 
+! determine which spin will be flipped
    rand = get_random_number()
    i_swap_value = get_random_whole_number(rand,size)
-
    rand = get_random_number()
    j_swap_value = get_random_whole_number(rand,size)
 
+! Flip Selected spin
    spins(i_swap_value, j_swap_value)=spins(i_swap_value, j_swap_value)*(-1)
 
    e_new=0
    e_old=0
 
+! Calculate energy contribution of flipped spin in new and old state while
+! accounting for periodic boundary conditions
    if (i_swap_value>1) then
       e_new=e_new+(spins(i_swap_value,j_swap_value)*spins((i_swap_value-1),j_swap_value))
       e_old=e_old+(spins(i_swap_value,j_swap_value)*spins((i_swap_value-1),j_swap_value)*(-1))
@@ -93,12 +110,12 @@ do Tstep=1,2
       e_old=e_old+(spins(i_swap_value,j_swap_value)*spins(i_swap_value,1)*(-1))
    end if
 
+! Calculate the difference between energy values of the two states
    e_new=(-1)*e_new
    e_old=(-1)*e_old
-
    delta_e=e_new-e_old
 
-
+! Apply Metropolis codition
    if (delta_e>0) then
       rand=get_random_number()
       g=exp((-beta*delta_e))
@@ -107,6 +124,7 @@ do Tstep=1,2
       end if
    end if
    
+! Calculate and record m value every 100 steps
    if (everyHundred == 100) then
        m=0
        do i=1,size
@@ -123,14 +141,17 @@ do Tstep=1,2
        m_T(1,k)=flipSpins
        m_T(1,k)=m_T(1,k)/1000000.0 
        write (out_unit,*) m_T(1,k),m_T(2,k)
-	   
+
+! If the iteration is 3 million or above use to calculate average
 	   if (flipSpins>2999999) then
 	       m_avg=m_avg+m
+! Calculate average m evert 100000 spin flip iterations
 		   if (avgCount==1000) then
 			   m_avg=m_avg/avgCount
 			   avgCount=0
 			   m_bins(mCount)=m_avg
 			   mCount=mCount+1
+			   m_avg=0
 		   end if
 		   avgCount=avgCount+1
 	   end if
@@ -268,6 +289,7 @@ do Tstep=1,9
 			   avgCount=0
 			   m_bins(mCount)=m_avg
 			   mCount=mCount+1
+			   m_avg=0
 		   end if
 		   avgCount=avgCount+1
 	   end if
@@ -405,6 +427,7 @@ do Tstep=3,4
 			   avgCount=0
 			   m_bins(mCount)=m_avg
 			   mCount=mCount+1
+			   m_avg=0
 		   end if
 		   avgCount=avgCount+1
 	   end if
