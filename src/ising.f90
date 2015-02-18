@@ -45,7 +45,7 @@ temp_loop: do nt = 1,settings%n_temp
 
   temp = settings%temp_min + (nt-1) * dT
 
-  write(output_unit,*) temp,'(',nt,'/',settings%n_temp,')'
+  write(output_unit,'(A,ES22.15,A,I8,A,I8,A)') 'T =',temp,' ( ',nt,' / ',settings%n_temp,' )'
 
   ! compute initial energy
   call hamiltonian(settings,spin,ham)
@@ -207,6 +207,15 @@ subroutine init_random_seed
 end subroutine init_random_seed
 !---------------------------------------------------------------------
 ! Compute nearest neighbors energy change
+!
+! Inputs:
+! - (settings) settings:  Settings data structure
+! - (integer4) spin:      Spin lattiuce
+! - (integer4) row, col:  Row and column of lattice site for which to
+!                         compute dE
+! Outputs:
+! - (double real) dE:     Change in energy due to flipping (i,j)th
+!                         lattice site spin
 !---------------------------------------------------------------------
 subroutine nn_energy(settings,spin,row,col,dE)
   use iso_fortran_env
@@ -221,12 +230,12 @@ subroutine nn_energy(settings,spin,row,col,dE)
 
   dE = 0.d0
 
-  if (row-1 > 0) dE = dE + spin(row-1,col) * spin(row,col)
-  if (row+1 <= settings%Nx) dE = dE + spin(row+1,col) * spin(row,col)
-  if (col-1 > 0) dE = dE + spin(row,col-1) * spin(row,col)
-  if (col+1 <= settings%Ny) dE = dE + spin(row,col+1) * spin(row,col)
+  if (row-1 > 0) dE = dE + spin(row-1,col)
+  if (row+1 <= settings%Nx) dE = dE + spin(row+1,col)
+  if (col-1 > 0) dE = dE + spin(row,col-1)
+  if (col+1 <= settings%Ny) dE = dE + spin(row,col+1)
 
-  dE = 2.d0 * dE
+  dE = 2.d0 * spin(row,col) * dE
   
   return
 end subroutine nn_energy
