@@ -22,17 +22,17 @@ character(len=10) ::  out_file
 character(len=7) ::  out_file_base
 character(len=3) ::  out_file_no
 
-!Dimension of square array
+! Dimension of square array
 size=100
 
-!Boltzmann Constant
+! Boltzmann Constant
 kB=1
 
 out_file_base="Results"
 
 open (unit=out_unit2,file="avg_m_values",action="write",status="replace")
 
-!Loops through spin flip iterations for T=1.0 and T-2.0
+! Loops through spin flip iterations for T=1.0 and T-2.0
 do Tstep=1,2
 
    k=1
@@ -145,7 +145,7 @@ do Tstep=1,2
 ! If the iteration is 3 million or above use to calculate average
 	   if (flipSpins>2999999) then
 	       m_avg=m_avg+m
-! Calculate average m evert 100000 spin flip iterations
+! Calculate average m every 100,000 spin flip iterations
 		   if (avgCount==1000) then
 			   m_avg=m_avg/avgCount
 			   avgCount=0
@@ -167,6 +167,7 @@ do Tstep=1,2
    
     !Iterations end
    end do
+   
    mCount=mCount-1
    do i=1,mCount
        avgM=avgM+m_bins(i)
@@ -186,6 +187,7 @@ do Tstep=1,2
 !Temp end
 end do
 
+!Loops through spin flip iterations for T=2.1-2.9
 do Tstep=1,9
 
    k=1
@@ -324,6 +326,7 @@ do Tstep=1,9
 !Temp end
 end do
 
+!Loops through spin flip iterations for T=3.0 and T-4.0
 do Tstep=3,4
 
    k=1
@@ -498,16 +501,3 @@ contains
 
 
 end program isingtest
-
-
-!write (out_unit,*) spins(1,1),spins(1,2),spins(1,3),spins(1,4),spins(1,5),spins(1,6),spins(1,7),spins(1,8),spins(1,9),spins(1,10)
-!write (out_unit,*) spins(2,1),spins(2,2),spins(2,3),spins(2,4),spins(2,5),spins(2,6),spins(2,7),spins(2,8),spins(2,9),spins(2,10)
-!write (out_unit,*) spins(3,1),spins(3,2),spins(3,3),spins(3,4),spins(3,5),spins(3,6),spins(3,7),spins(3,8),spins(3,9),spins(3,10)
-!write (out_unit,*) spins(4,1),spins(4,2),spins(4,3),spins(4,4),spins(4,5),spins(4,6),spins(4,7),spins(4,8),spins(4,9),spins(4,10)
-!write (out_unit,*) spins(5,1),spins(5,2),spins(5,3),spins(5,4),spins(5,5),spins(5,6),spins(5,7),spins(5,8),spins(5,9),spins(5,10)
-!write (out_unit,*) spins(6,1),spins(6,2),spins(6,3),spins(6,4),spins(6,5),spins(6,6),spins(6,7),spins(6,8),spins(6,9),spins(6,10)
-!write (out_unit,*) spins(7,1),spins(7,2),spins(7,3),spins(7,4),spins(7,5),spins(7,6),spins(7,7),spins(7,8),spins(7,9),spins(7,10)
-!write (out_unit,*) spins(8,1),spins(8,2),spins(8,3),spins(8,4),spins(8,5),spins(8,6),spins(8,7),spins(8,8),spins(8,9),spins(8,10)
-!write (out_unit,*) spins(9,1),spins(9,2),spins(9,3),spins(9,4),spins(9,5),spins(9,6),spins(9,7),spins(9,8),spins(9,9),spins(9,10)
-!write(out_unit,*)spins(10,1),spins(10,2),spins(10,3),spins(10,4),spins(10,5),spins(10,6),spins(10,7),spins(10,8),spins(10,9)
-!write (out_unit,*) ' '
