@@ -1,0 +1,9 @@
+#!/bin/bash -login
+
+gfortran isingCode.f95 -o test
+
+./test
+
+gnuplot> load create_mvsSteps_Plot.p 
+
+gnuplot> load create_mvsT_Plot.p 
