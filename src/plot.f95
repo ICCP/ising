@@ -6,32 +6,41 @@ module plot
   public plot_init, plot_close, plot_lattice
 
 contains
+  subroutine plot_init(sizex,sizey)
+    integer, intent(in) :: sizex,sizey
+    character(len=30)   :: geomstr
+    real(8)             :: asp_ratio
 
-  subroutine plot_init(latticeSize)
-    integer, intent(in) :: latticeSize
-    call plsdev("xcairo")
-    call plinit()
+    write (geomstr,"(i0,'x',i0)") sizex,sizey
+    asp_ratio = dble(sizey)/dble(sizex)
 
     !You can find default colors at
     !http://plplot.sourceforge.net/docbook-manual/plplot-html-5.9.9/plcol0.html
 
-    !call plscol0(0, 255, 255, 255)  ! white
-    !call plscol0(1, 255, 0, 0)      ! red
-    !call plscol0(2, 255, 77, 0)     ! orange
-    !call plscol0(3, 255, 255, 0)    ! yellow
-    !call plscol0(4, 0, 255, 0)      ! green
-    !call plscol0(5, 0, 0, 255)      ! blue
-    !call plscol0(6, 0, 255, 255)    ! cyan
-    !call plscol0(7, 255, 0, 255)    ! magenta
-    !call plscol0(8, 128, 128, 128)  ! gray
-    !call plscol0(9, 0, 0, 0)        ! black
+    call plscol0(0, 255, 255, 255)  ! white
+    call plscol0(1, 255, 0, 0)      ! red
+    call plscol0(2, 255, 77, 0)     ! orange
+    call plscol0(3, 255, 255, 0)    ! yellow
+    call plscol0(4, 0, 255, 0)      ! green
+    call plscol0(5, 0, 0, 255)      ! blue
+    call plscol0(6, 0, 255, 255)    ! cyan
+    call plscol0(7, 255, 0, 255)    ! magenta
+    call plscol0(8, 128, 128, 128)  ! grey
+    call plscol0(9, 0, 0, 0)        ! black
 
-    call plenv(0d0, latticeSize + 1d0, 0d0, latticeSize + 1d0, 0, 0)
+    call plsetopt("geometry",geomstr) ! Change?
+    call plsdev("png")
+    call plsfam(1,1,100000)
+    call plsfnam("%n.png")
+    call plinit()
+    call pladv(0)
+    call plvpas(0d0, 1d0, 0d0, 1d0, asp_ratio)
+    call plwind(5d-1, sizex+5d-1, 5d-1, sizey+5d-1)
   end subroutine plot_init
 
   subroutine plot_close()
     call plspause(.false.)
-    call plend()
+    !call plend()
   end subroutine plot_close
 
   subroutine plot_lattice(lattice)
@@ -49,11 +58,11 @@ contains
       do j = 1, size(lattice, 2)
         x = i; y = j
         if (lattice(i, j) .eq. 1) then
-          call plcol0(1)            !default red
-          call plpoin([x], [y], 30) !30 denotes up-arrow glyph
+          call plcol0(8)        ! grey
+          call plot_square(x,y)
         else ! Comment out the else clauses to speed drawing
-          call plcol0(11)           !default cyan
-          call plpoin([x], [y], 31) !31 denotes down-arrow glyph
+          call plcol0(9)        ! black
+          call plot_square(x,y)
         end if
       end do
     end do
@@ -61,4 +70,13 @@ contains
     call plflush()
   end subroutine plot_lattice
 
+  subroutine plot_square(i,j)
+    real(8), intent(in) :: i,j
+    real(8)             :: x(4),y(4)
+
+    x = (/i-.5,i-.5,i+.5,i+.5/)
+    y = (/j-.5,j+.5,j+.5,j-.5/)
+
+    call plfill(x,y)
+  end subroutine
 end module plot
