@@ -1,4 +1,6 @@
-100     !Lattice Size
-10000   !Number of Iterations
-1       !Boltzman constant
-2       !temperature
+100         !Lattice Size
+1000000     !Number of Iterations
+1,5,10      !'Min Temperature','Max Temperature','Number of point between'
+50000       !Number of Averages
+1           !Boltzman constant
+1           !j
