@@ -3,9 +3,11 @@
 % BEFORE execution check ising.f for parameter setup in WRITE(33,*) file
 clear all;
 clc;
-fileID = fopen('Magnetization.out10pow6');
+fileID = fopen('Magnetization.out');
 %
 header = textscan(fileID,'%s',3);
+% update data point count according to Magnetization.out
+% Look into isisng.f for exact calculation
 datain = textscan(fileID,'%f %d %f',16000);
 fclose(fileID);
 %
@@ -13,7 +15,7 @@ fclose(fileID);
 %X = zeros(1:100);
 Magnetization = datain{3};
 for j = 1:16
-    for i = 1:1000
+    for i = 1:1000 % get this number from saved number of iteration
         plot_mag(i,j)= Magnetization((j-1)*i+1);
         X(i) = i*1000;
     end
