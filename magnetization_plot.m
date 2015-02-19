@@ -1,8 +1,9 @@
 % This program plots all the magnetization data for Ising model for
 % iteration vs magnetization for each temperature
+% BEFORE execution check ising.f for parameter setup in WRITE(33,*) file
 clear all;
 clc;
-fileID = fopen('Magnetization.out');
+fileID = fopen('Magnetization.out10pow6');
 %
 header = textscan(fileID,'%s',3);
 datain = textscan(fileID,'%f %d %f',16000);
@@ -21,7 +22,7 @@ plot(X,plot_mag(:,1),X,plot_mag(:,6),X,plot_mag(:,8),X,plot_mag(:,11),X,plot_mag
 grid on
 xlabel('# of iterations')
 ylabel('|magnetization|')
-legend('T=1.0','T=2.0','T=2.4','T=3.0','T=4.0')
+legend('T=1.0','T=2.0','T=2.4','T=3.0','T=4.0','Location','SouthWest')
 set(gcf, 'PaperPosition', [0 0 5 5]); %Position plot at left hand corner with width 5 and height 5.
 set(gcf, 'PaperSize', [5 5]); %Set the paper to have width 5 and height 5.
 saveas(gcf, 'magnetization', 'pdf') %Save figure
