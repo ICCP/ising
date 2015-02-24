@@ -7,150 +7,185 @@
 \usepackage{dcolumn}  % Align table columns on decimal point
 \usepackage{multirow} % Multirow/column tables
 \usepackage{hyperref} % Hyperlinks
+\usepackage{float}
 
 \begin{document}
 
-\title{Manuscript Title:\\with Forced Linebreak}% Force line breaks with \\
-\author{Ann Author}
+\title{2D Ising Model Representation and Analysis Using Monte Carlo and Metropolis Algorithm With Less Memory Consumption}% Force line breaks with \\
+\author{Thavappiragasam Mathialakan}
 \date{\today}% It is always \today, today, but you can specify other dates manually 
 \maketitle
 
 \begin{abstract}
-An article usually includes an abstract, a concise summary of the work
-covered at length in the main body of the article. 
+The 2D Ising model obviously deals with mass data to study the behavior of magnetization and energy related with temperature. This analysis should be worked out in best time complexity with less memory consumption. In this paper, we introduces a less memory usage implementation technique Boolean 1D-array lattice and shows the improvement in time complexity. It also analysis this studies using our C++ coding and Matlab graphs. 
 \end{abstract}
 
 
-\section{First-level heading} %Title for the section
+\section{Introduction} %Title for the section
 \label{sec:level1} %Label for the section, to be used for referencing in other parts of the document
 
-This sample document demonstrates some common uses of \LaTeX\ in documents you'll write for ICCP. Further information can be found online at the \href{http://en.wikibooks.org/wiki/LaTeX}{\LaTeX\ wikibook} or in the distribution documentation. 
+The electron's spin and the magnetic moment associated with are taking key role in the theory of magnetism. Ferromagnetism arises when a collection of such spins conspire so that all of their magnetic moments point in the same direction, yielding a total moment. This systems generally lose their magnetism at high temperature. The magnetic properties obviously depend on temperature. Ising model is a very useful simulation that can be used to analyze how temperature effects the magnetization.
 
-When we refer to commands in this example file, they always have their required formal arguments in normal \TeX{} format. In this format, \verb+#1+, \verb+#2+, etc. stand for required author-supplied arguments to commands. For example, in \verb+\section{#1}+ the \verb+#1+ stands for the title text of the author's section heading, and in \verb+\title{#1}+ the \verb+#1+ stands for the title text of the paper.
-
-Line breaks in section headings at all levels can be introduced using \textbackslash\textbackslash. A blank input line tells \TeX\ that the paragraph has ended. 
-
-\subsection{\label{sec:level2} Second-level heading: Formatting}
-
-This file may be formatted in either the \texttt{preprint} or \texttt{reprint} style. \texttt{reprint} format mimics final journal output. The paper size may be specified with the option \texttt{letter}. These options are inserted in the square brackets inside the \texttt{\textbackslash documentclass[]\{article\}} command.
-
-\section{Math and Equations}
-Inline math may be typeset using the \verb+$+ delimiters. Bold math symbols may be achieved using the \verb+bm+ package and the \verb+\bm{#1}+ command it supplies. For instance, a bold $\alpha$ can be typeset as \verb+$\bm{\alpha}$+ giving $\bm{\alpha}$. Fraktur and Blackboard (or open face or double struck) characters should be typeset using the \verb+\mathfrak{#1}+ and \verb+\mathbb{#1}+ commands respectively. Both are supplied by the \texttt{amssymb} package. For
-example, \verb+$\mathbb{R}$+ gives $\mathbb{R}$ and \verb+$\mathfrak{G}$+ gives $\mathfrak{G}$
-
-In \LaTeX\ there are many different ways to display equations, and a few preferred ways are noted below. Displayed math will center by default. Use the class option \verb+fleqn+ to flush equations left.
-
-Below we have numbered single-line equations; this is generally the most common type of equation in \LaTeX: 
-\begin{equation} 
-\label{eq:one} %Label for the equation, to be used for referencing in other parts of the document
-  i \hbar \frac{\partial \Psi}{\partial t} = -\frac{\hbar^2}{2m}\nabla^2 \psi + U(\mathbf{x}) \psi
+\subsection{\label{sec:level2.1} Ising Model}
+This model was proposed by Lenz (1920) to study the phase transition of ferromagnets at the Curie temperature. The one dimensional case was completely developed by his pupil (1925) and the two dimensional case was done by Onsager. This is a quantum model of a collection of spins that represent magnetic moments. Two dimensional lattice is represented in a 2D array that consists a set of spins. A spin in a lattice is in either up or down that points +z or -z.\\
+The spins are considered to be interact only between the neighbors in simplest Ising model. The equation ~\ref{eq:one} express the energy of the system that is equal to sum of the all pairs of nearest neighbour spins $<i, j>$.
+\begin{equation}
+\label{eq:one}
+E = -J \sum_{<i,j>}S_iS_j
 \end{equation}
 
-When the \verb+\label{#1}+ command is used [cf. input for Eq.~(\ref{eq:one})], the equation can be referred to in text without knowing the equation number that \TeX\ will assign to it. Just use \verb+\ref{#1}+, where \verb+#1+ is the same name that was used in the \verb+\label{#1}+ command.
+where J is the coupling constant and $S_i = \pm 1$ are the two spin states allowed in each lattice site. The energy between a single pair gives -J if tow neighbouring spins in the same direction and +J if they are antiparallel. The magnetization can be calculated by taking the sum of all spins (equation ~\ref{eq:two}). 
+\begin{equation}
+\label{eq:two}
+M = \sum_{i}S_i
+\end{equation}
+The average magnetization formed by all spins is called as magnetization density. The magnetization density for a square lattice of size $N = L^2$ is given by,  
+\begin{equation}
+\label{eq:three}
+\frac{1}{L^2} \sum_{i}S_i
+\end{equation}
 
-Unnumbered single-line equations can be typeset using the \verb+equation*+ environment:
-\begin{equation*}
-  \hat{f}(\xi) = \int_{-\infty}^\infty f(x) e^{-2\pi i x \xi} \, \mathrm{d}x
-\end{equation*}
 
-\subsection{Multiline equations}
+\subsection{\label{sec:level2.2} Monte Carlo}
+The Ising model is simulated using Monte Carlo (MC) that is stochastic, nondeterministic and rely heavily on the use of random or pseudo-random numbers. MC simulations are very powerful simulations and versatile numerical tools used to study large systems. In the Ising model, the Metrapolis algorithm analysis a huge number of states/configurations. For example, There are $2^N$ considerable states in $N = L^2$ spin lattice because each spin can be either of two states. In order to avoid this inconvenience, some of the samples has been chosen from them using the MC.
+The expectation value of an observable A can be given as,
+\begin{equation}
+\label{eq:four}
+<A> = \frac{\sum_{cfg}{A_{cfg}e^{-\beta E_{cfg}}}}{\sum_{cfg}{e^{-\beta E_{cfg}}}}
+\end{equation}
+where $A_{cfg}$ is the value of A for the state or configuration \texttt{cfg}. So, given a system that has a discrete number of states, we could, using a computer, calculate A for each state and weight these values by their Boltzman factors to find the average A.
 
-You'll generally want to use the \verb+align+ environment for multiline equations. Use the \verb+\nonumber+ command at the end of each line (again denoted with \textbackslash\textbackslash) to avoid assigning a number, or \verb+align*+ to disable numbering entirely:
-\begin{align}
-  \sin(2\theta) &= 2 \sin(\theta) \cos(\theta) \nonumber \\
-                &= \frac{2\tan(\theta)}{1 + \tan^2(\theta)}
-\end{align}
-Note how alignment occurs at the (unprinted) \verb+&+ character.
+ One (bad) way of using random numbers would be to randomly pick a lot of states, measure A for each of them, and weight these values of A by their Boltzman factors. We might get close to the right answer if we sampled a lot of states, but we would spend a lot of time calculating A for states that contribute very little to the final result (an Ising lattice at very high temperature is unlike to be in the state with all spins pointing in one direction). Instead of sampling (measuring parameters like A for) a lot of states and then weighting them by their Boltzman factors, it makes more sense to choose states based on their Boltzman factors and to then weight them equally. This is known as the Metropolis algorithm, which is an importance sampling technique.
+ 
+\subsection{\label{sec:level2.3} Metropolis Algorithm}
+This algorithm chooses a random spin and flip it from +1 to -1 or vise versa. Due to this individual spin's flip, the energy is gained or lost, and the state is going to change from one to another. This state changing is accepted based on the energy difference of the new state related to the current state. In this way, MC simulation technique is used to fulfill the algorithm, and Boltzman factor $k_B$ is taken as 1.
 
-Do not use \verb+\label{#1}+ on a line of a multiline equation if \verb+\nonumber+ is also used on that line. Incorrect cross-referencing will result. Notice the use \verb+\text{#1}+ for using a Roman font within a math environment.
 
-\section{Cross-referencing}
-\LaTeX\ will automatically number such things as sections, footnotes, equations, figure captions, and table captions for you. In order to reference them in text, use the \verb+\label{#1}+ and \verb+\ref{#1}+ commands\footnote{Check out the \texttt{cleveref} (one r) package, too!}. To reference a particular page, use the \verb+\pageref{#1}+ command.
+\texttt{Major Steps of the Algorithm}
+\begin{enumerate}
+\item Set the temperature T
+\item Initialize lattice
+\item Do this for a given number of iterations
+\begin{enumerate}
+    \item Choose random spin in the lattice and flip it to opposite.
+    \item Calculate the energy difference between the trial state and the present state, $\delta E$.
+    \item If $\delta E \leq 0$ the trial state is accepted. Otherwise, generate a uniform random number $\delta R $ in [0, 1], and new state is accepted if $\delta R \leq e^{-\beta \delta E} $
+    \item Calculate the average energy and magnetization
+\end{enumerate}
 
-The \verb+\label{#1}+ should appear within the section heading (or immediately after), within the footnote text, within the equation, or within the table or figure caption. The \verb+\ref{#1}+ command is used in text at the point where the reference is to be displayed.  Some examples: Section~\ref{sec:level1} on page~\pageref{sec:level1}, Table~\ref{tab:table1}, and Fig.~\ref{fig:epsart}.
-\begin{figure}[b]
-  \centering
-  \includegraphics{figures/fig_1}% Imports a figure - does not automatically scale
-  \caption{\label{fig:epsart} A figure caption. The figure captions are automatically numbered.}
-\end{figure}
+\end{enumerate}
 
-\section{Floats: Figures, Tables, etc.}
-Figures (images) and tables are usually allowed to ``float'', which means that their placement is determined by \LaTeX, while the document is being typeset. 
+\section{Approaches to reduce memory consumption}
 
-Use the \texttt{figure} environment for a figure, the \texttt{table} environment for a table. In each case, use the \verb+\caption+ command within to give the text of the figure or table caption along with the \verb+\label+ command to provide a key for referring to this figure or table. Insert an image using either the \texttt{graphics} or \texttt{graphix} packages, which define the \verb+\includegraphics{#1}+ command. (The two packages differ in respect of the optional arguments used to specify the orientation, scaling, and translation of the image.) To create an alignment, use the \texttt{tabular} environment. 
+The lattice spin model represents set of spins in a molecular structure. A spin in a model be in one of the two states, may be up or down. This model uses a data structure 2D integer array of 1s and -1s to represent up and down spins respectively. Suppose a lattice has N spins, it has to use 32N bits of memory to keep this record. It can be reduced to N bits if we choose Boolean array. How this Boolean representation is possible? A spin is in only two possible states, so they can be represented using Boolean bi-value, true or false. The up-spin and down-spin is given by true (1) and false (0) respectively instead of 1 and -1.
+
+This way, further of less memory usage, helps to reduce processing time using bitwise logical operations instead of time consuming arithmetic operation multiplexer (In worst case, It takes $\theta (n^2)$ to multiply two n-digit numbers ). During the energy calculation, each neighbour of a randomly selected flipped-spin is taken to multiply. A spin can has two to four neighbours or connections, but every spin has four neighbours in periodic boundary conditions, where it has link between spins in row 1, n and spins in column 1, n. 
+
+The table ~\ref{tab:table1} shows the energy of a spin pair $<S_i, S_j>$ for all four possible combinations. The energy is doubled in a pair by the effect given to each other. This energy calculation requires two multiplication operations, $mul( mul(S_i, S_j), 2)$. In our Boolean lattice, spin pair is operated by bitwise XOR and energy is chosen to -2 or 2 based on the truth value (table ~\ref{tab:table2}). It reduces the time complexity significantly. When we are thinking in low level architecture or if we have plan to design a specific electronic controller to solve this task, deal with bitwise operation, it will support easy and very low budget project because such operations can be performed using less logic gates.   
 
 \begin{table}
   \centering
   \begin{tabular}{ |l|l|l| }
+
   \hline
-  \multicolumn{3}{ |c| }{Team sheet} \\
+  \multicolumn{3}{ |c| }{Integer Representation} \\
   \hline
-  Goalkeeper & GK & Paul Robinson \\ \hline
-  \multirow{4}{*}{Defenders} & LB & Lucus Radebe \\
-   & DC & Michael Duburry \\
-   & DC & Dominic Matteo \\
-   & RB & Didier Domi \\ \hline
-  \multirow{3}{*}{Midfielders} & MC & David Batty \\
-   & MC & Eirik Bakke \\
-   & MC & Jody Morris \\ \hline
-  Forward & FW & Jamie McMaster \\ \hline
-  \multirow{2}{*}{Strikers} & ST & Alan Smith \\
-   & ST & Mark Viduka \\
-  \hline
+  $S_i$ & $S_j$ & Energy \\ \hline
+  -1 & -1 & 2 \\ \hline
+  -1 &  1 & -2 \\ \hline
+   1 & -1 & -2 \\ \hline
+   1 &  1 & 2 \\ \hline
   \end{tabular}
-  \caption{\label{tab:table1}A table, demonstrating the use of the \texttt{multirow} package for spanning rows and columns.}
+  \caption{\label{tab:table1}The energy of a spin pair $<S_i, S_j>$ } in integer representation
 \end{table}
 
-The best place for the \texttt{figure} or \texttt{table} environment is immediately following its first reference in text; this sample document illustrates this practice for Fig.~\ref{fig:epsart}, which shows a figure that is small enough to fit in a single column. In exceptional cases, you will need to move the float earlier in the document: \LaTeX's float placement algorithms need to know about a full-page-width float sooner.
+\begin{table}
+  \centering
+  \begin{tabular}{ |l|l|l|l| }
 
-The content of a table is typically a \texttt{tabular} environment, giving rows of type in aligned columns. Column entries separated by \verb+&+'s, and 
-each row ends with \textbackslash\textbackslash. The required argument for the \texttt{tabular} environment specifies how data are aligned in the columns. 
-For instance, entries may be centered, left-justified, right-justified, aligned on a decimal point. 
+  \hline
+  \multicolumn{4}{ |c| }{Boolean Representation} \\
+  \hline
+  $S_i$ & $S_j$ & XOR& Energy \\ \hline
+   0 &  0 & 0 & 2 \\ \hline
+   0 &  1 & 1 & -2 \\ \hline
+   1 &  0 & 1 & -2 \\ \hline
+   1 &  1 & 0 & 2 \\ \hline
+  \end{tabular}
+  \caption{\label{tab:table2}The energy of a spin pair $<S_i, S_j>$ } in Boolean representation
+\end{table}
 
-Extra column-spacing may be be specified as well, although \LaTeX sets this spacing so that the columns fill the width of the table. Horizontal rules are typeset using the \verb+\hline+ command. Rows with that columns span multiple columns can be typeset using the \verb+\multicolumn{#1}{#2}{#3}+ command (for example, see the first row of Table~\ref{tab:table1}).
-
-\appendix
-
-\section{Appendixes}
-
-To start the appendixes, use the \verb+\appendix+ command. This signals that all following section commands refer to appendixes instead of regular sections. Therefore, the \verb+\appendix+ command should be used only once---to setup the section commands to act as appendixes. Thereafter normal section commands are used. The heading for a section can be left empty. For example, 
-\begin{verbatim}
-\appendix
-\section{}
-\end{verbatim}
-will produce an appendix heading that says ``APPENDIX A'' and
-\begin{verbatim}
-\appendix
-\section{Background}
-\end{verbatim}
-will produce an appendix heading that says ``APPENDIX A: BACKGROUND'' (note that the colon is set automatically).
-
-If there is only one appendix, then the letter ``A'' should not appear. This is suppressed by using the star version of the appendix command (\verb+\appendix*+ in the place of \verb+\appendix+).
-
-\section{A little more on appendixes}
-
-Observe that this appendix was started by using
-\begin{verbatim}
-\section{A little more on appendixes}
-\end{verbatim}
-
-Note the equation number in an appendix:
+How to calculate the magnetization in bit/Boolean array? Suppose the lattice of size $N = L^2$ has \texttt{k} up-spins, the magnetization will be calculated by the equation ~\ref{eq:five}. In our representation, up-spins are 1 and down-spins are 0, sum of the bit array gives the number of up-spins, so the magnetization is given by the equation ~\ref{eq:six}.
 \begin{equation}
-  E^2=p^2c^2 + m^2c^4.
+\label{eq:five}
+M = 2k-L^2
+\end{equation}
+\begin{equation}
+\label{eq:six}
+M = 2\sum_{i}S_i -L^2
 \end{equation}
 
-\subsection{\label{app:subsec}A subsection in an appendix}
+\section{Implementation}
+The high-level programming language C is the most preferable language to deal with mass data, and C++ is an advanced version of C. So, we chose C to implement this ising model using Metropolis algorithm as described above. Since 1D array offers better memory locality and less allocation and deallocation overhead, It is faster way than 2D for dense matrices. As the reason given above, the data structure 1D Boolean array is chosen to keep spins in lattice.  
 
-You can use a subsection or subsubsection in an appendix. Note the numbering: we are now in Appendix~\ref{app:subsec}.
+\section{Results and Discussion}
+In our testing case, a lattice of size $N = 10^2$ is taken, and initially it is configured with all up; a 1D Boolean array of size 100 is set to true. We applied both boundary conditions (BC): 1) Every spin in all four edges of lattice has no round robin connections. 2) Periodic BC. When using the first BC, initial value of average energy and magnetization is given by $-2L(L+1)$ and 1.0 ($=L/L$) respectively. The energy will be $2N$ and the same magnetization for second BC. The average energy and magnetization are calculated for every 0.1 temperature increases in range [0, 5]. This task is processed for 10 000 iterations. The figure ~\ref{fig:Mag} shows the changes on magnetization with temperature. It decreases when temperature increases, and we found the critical temperature, $T_c$ is 2.3 approximately. The energy is a continuous function of temperature, and increases as a function of temperature (Figure ~\ref{fig:Energy}).    
 
-Note the equation numbers in this appendix, produced with the subequations environment:
-\begin{subequations}
-\begin{align}
-  E^2 &= m^2c^4 \quad \text{(rest)}, \label{appa} \\
-  E^2 &= m^2c^4 + p^2 c^2 \quad \text{(relativistic)}, \label{appb} \\
-  E^2 &\approx p^2 c^2 \quad \text{(ultrarelativistic)} \label{appc}
-\end{align}
-\end{subequations}
-They turn out to be Eqs.~(\ref{appa}), (\ref{appb}), and (\ref{appc}).
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=10cm,height=8cm]{figures/Mag_Temp}
+  \caption{\label{fig:Mag} The change of Magnetization with increasing temperature when $J=1$ and $k_B=1$.}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=10cm,height=8cm]{figures/Ene_temp_scatter}
+  \caption{\label{fig:Energy} The change of Energy with increasing temperature when $J=1$ and $k_B=1$.}
+\end{figure}
+
+Finally, for the fixed temperature 2.3, the configuration is changed through 1000 iterations, and magnetization is measured and graphed as shown in the Figure ~\ref{fig:Config}. This falls on the linear line $y = -0.0003x + 0.9573$. And also the Figure  ~\ref{fig:Config_E} shows the energy related to configurations. The linearity of this relationship is given by the equation $y = 0.0005x - 1.6353$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm,height=6cm]{figures/Config}
+  \caption{\label{fig:Config} The change of Magnetization related with configurations at temperature 2.3}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm,height=6cm]{figures/Config_E}
+  \caption{\label{fig:Config_E} The change of Energy related with configurations at temperature 2.3.}
+\end{figure}
+
+\section{Conclusion}
+We tested our approach successfully using minimum memory and time.
+The magnetization decreases with increasing temperature, but in contrast, average energy increases with it. Further, even though those measurements fluctuating for the configuration changes, It can be brought into a linear trend.
+\newpage
+\appendix
+\section{Periodic Boundary Condition}
+
+The figures ~\ref{fig:No_PBC} and ~\ref{fig:PBC} clearly show the distinguishes between periodic boundary condition and without it. 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=4cm,height=6cm]{figures/NoPBC_ls}
+  \caption{\label{fig:No_PBC} The links in 3x3 lattice without PBC.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=4cm,height=6cm]{figures/PBC_ls}
+  \caption{\label{fig:PBC} The links in 3x3 lattice with PBC.}
+\end{figure}
+
+We also tested our implementation of ising model for PBC, the magnetization and energy changes related with temperature are shown in figure ~\ref{fig:Mag_PBC} and ~\ref{fig:Energy_PBC}  respectively.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm,height=6cm]{figures/Mag_Temp_PBC}
+  \caption{\label{fig:Mag_PBC} The change of Magnetization with increasing temperature when $J=1$ and $k_B=1$ using PBC}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm,height=6cm]{figures/Ene_temp_scatter_PBC}
+  \caption{\label{fig:Energy_PBC} The change of Energy with increasing temperature when $J=1$ and $k_B=1$ using PBC}
+\end{figure}
 
 \end{document}
