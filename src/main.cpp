@@ -1,303 +1,165 @@
-#include <vector>
-#include <cmath>
-//#include <boost/tuple/tuple.hpp>
-#include <random>
-#include <iostream>
-#include <math.h>
-#include <map>
-#include <time.h>
-#include <iostream>
+/*
+ * File:   main.cpp
+ * Author: Mark Wittekind and Drew Murray
+ *
+ * Created on March 5, 2015, 6:03 PM
+ */
+
+#include <cstdlib>
+#include "SimulationParametersStruct.cpp"
+#include "CSimulation.h"
 #include <fstream>
-#include <chrono>
-#include <ctime>
-//#include "gnuplot-iostream.h"
+#include <streambuf>
+#include <iostream>
+#include <vector>
+#include <string.h>
+#include <limits>
 
-// TODO: Compare time avg to ensemble
+using namespace std;
+/*
+ *
+ */
 
-////////////
-// GLOBAL //
-////////////
-int genSeed = time(0);
-std::default_random_engine engine(genSeed);
-std::uniform_real_distribution<float> rDist(0, 1);
+unsigned int calc_timesteps(SimulationParameters *SimPar)
+{
+	unsigned int t = 1;
+	t *= SimPar->HEIGHT;
+	t *= SimPar->WIDTH;
+	t *= SimPar->temperature;
+	t /= 2;
+	return t;
+}
 
-using std::endl;
-using std::cout;
-using std::vector;
-using std::chrono::steady_clock;
-using std::chrono::duration;
+void print_header(SimulationParameters *SimPar, ostream &head_stream)
+{
+	head_stream << "Simulation Parameters\n";
+	head_stream << SimPar->WIDTH  << " WIDTH \n";
+	head_stream << SimPar->HEIGHT  << " HEIGHT \n";
+	head_stream << SimPar->MAXTIME  << " MAXTIME\n";
+	head_stream << SimPar->TIMESTEP  << " TIMESTEP\n";
+	head_stream << SimPar->MAXTIMESTEPS  << " MAXTIMESTEPS\n";
+	head_stream << SimPar->COUPLING_CONSTANT  << " COUPLING_CONSTANT\n";
+	head_stream << SimPar->temperature  << " temperature\n";
+	head_stream << SimPar->BOLTZMAN_CONSTANT  << " BOLTZMAN_CONSTANT\n";
+	head_stream << SimPar->PRINT_FREQ  << " PRINT_FREQ\n";
+	head_stream << SimPar->MIN_TEMP  << " MIN_TEMP\n";
+	head_stream << SimPar->MAX_TEMP  << " MAX_TEMP\n";
+	head_stream << SimPar->TEMP_STEP  << " TEMP_STEP\n";
+	head_stream << SimPar->CRIT_MODE  << " CRIT_MODE\n";
+	head_stream << SimPar->CRIT_REPEATS  << " CRIT_REPEATS\n";
+	head_stream << SimPar->var_timestep  << " var_timestep\n";
+	return;
+}
 
-vector<vector<int >> fillArray(vector<vector<int >> lattice, int N, bool rand, float& magnetization) {
-	std::uniform_int_distribution<int> dist(-1, 1);
-	magnetization = 0;
-	for (int i = 0; i < N; i++) {
-		for (int j = 0; j < N; j++) {
-			if (rand == 1)
-			{
-				lattice[i][j] = dist(engine);
+int main(int argc, char** argv) {
+	 srand (time(NULL));
+	//output stream for position
+	streambuf * pos_buf;
+	ofstream pos_of;
+	streambuf * mag_buf;
+	ofstream mag_of;
+	streambuf * en_buf;
+	ofstream en_of;
+	streambuf * head_buf;
+	ofstream head_of;
+	if (false){
+		//set to cout
+		pos_buf = cout.rdbuf();
+		mag_buf = cout.rdbuf();
+		en_buf = cout.rdbuf();
+		head_buf = cout.rdbuf();
+	}
+	else{
+		//set to filename
+		pos_of.open("data/raw_positions.txt");
+		pos_buf = pos_of.rdbuf();
+		mag_of.open("data/mag.txt");
+		mag_buf = mag_of.rdbuf();
+		en_of.open("data/energy.txt");
+		en_buf = en_of.rdbuf();
+		head_of.open("data/parameters.txt");
+		head_buf = head_of.rdbuf();
+	}
+
+
+	ostream pos_stream(pos_buf);
+	ostream mag_stream(mag_buf);
+	ostream en_stream(en_buf);
+	ostream head_stream(head_buf);
+	//TODO allow for outputting to file
+	//TODO allow for command line parameters
+
+
+	SimulationParameters* SimPar = new SimulationParameters();
+
+	print_header(SimPar, head_stream);
+	head_of.close();
+
+	if(SimPar->CRIT_MODE){
+		float TempCritsAvg;
+		for(unsigned short r =0;r<SimPar->CRIT_REPEATS;r++){
+			cout << "\nRepeat: " << r << "/" << SimPar->CRIT_REPEATS << "\n";
+			vector<float> mags;
+			for(float T = SimPar->MIN_TEMP;T<SimPar->MAX_TEMP;T+=SimPar->TEMP_STEP){
+				cout << "Temperature: " << T << endl;
+				SimPar->temperature = T;
+
+				//TODO SimPar->MAXTIMESTEPS=calc_timesteps(SimPar);
+				cout << "MAXTIMESTEPS = " << SimPar->MAXTIMESTEPS << "\n";
+				CSimulation Simulation(SimPar);
+				CLattice lattice(SimPar->HEIGHT,SimPar->WIDTH, SimPar->COUPLING_CONSTANT);
+				CObject *lattice2 = &lattice;
+				Simulation.addObject(lattice2);
+
+				Simulation.run(pos_stream,mag_stream, SimPar);
+				pos_of.flush();
+				mag_of.flush();
+				en_of.flush();
+				mags.push_back(Simulation.calcMag());
+				//cout << "Final Energy: " << Simulation.calcEnergy() << "\n";
+
 			}
-			else {
-				lattice[i][j] = 1;
-			}
-			magnetization += lattice[i][j];
-		}
-	}
-	//cout << magnetization << endl;
-	return lattice;
-}
 
-void metroTest(float energyDiff, vector<vector<int >>& lattice, int row, int col, float& magnetization, float currentTemp)
-{
-	const int boltz = 1;
-	double beta;
-	// R value random distribution
-	float R;
-
-	// Metropolis test
-	if (energyDiff < 0)
-	{
-		// Flip state
-		lattice[row][col] = -lattice[row][col];
-		magnetization += 2 * lattice[row][col];
-
-	}
-	else {
-		// Pick random value for R
-		R = rDist(engine);
-		beta = 1 / (boltz * currentTemp);
-
-		if (exp(-beta * (energyDiff)) > R) {
-			// Flip state
-			lattice[row][col] = -lattice[row][col];
-			magnetization += 2 * lattice[row][col];
-		}
-	}
-}
-
-float findEnergyDiff(int row, int col, vector<vector<int >> lattice, int N) {
-	float energyDiff = 0;
-
-	// Check left
-	if (col == 0) {
-		//energyDiff += lattice[row][col] * lattice[row][N-1];        
-	}
-	else {
-		energyDiff += lattice[row][col] * lattice[row][col - 1];
-	}
-
-	// Check right
-	if (col == N - 1) {
-		//energyDiff += lattice[row][col] * lattice[row][0];
-
-	}
-	else {
-		// Check col +1
-		energyDiff += lattice[row][col] * lattice[row][col + 1];
-	}
-
-	// Check up
-	if (row == N - 1) {
-		// Check 0
-		//energyDiff += lattice[row][col] * lattice[0][col];
-
-	}
-	else {
-		// Check row +1
-		energyDiff += lattice[row][col] * lattice[row + 1][col];
-	}
-
-	// Check down
-	if (row == 0) {
-		// Check N-1
-		//energyDiff += lattice[row][col] * lattice[N-1][col];
-
-	}
-	else {
-		// Check row -1
-		energyDiff += lattice[row][col] * lattice[row - 1][col];
-
-	}
-
-	energyDiff = 2 * energyDiff;
-	return energyDiff;
-}
-
-float averageArray(float myArray[], int size)
-{
-	float sum = 0;
-	for (int i = 0; i < size; i++)
-	{
-		sum += myArray[i];
-	}
-	return sum / size;
-}
-
-float findStdDev(float avg, float myArray[], int size)
-{
-	float variance = 0;
-	for (int i = 0; i < size; i++)
-	{
-		variance += pow((avg - myArray[i]), 2);
-	}
-	return sqrt(variance / size);
-}
-
-void generateMathematica(vector<vector<float>>& results)
-{
-	std::ofstream myfile;
-	myfile.open("results.txt");
-	myfile << "ErrorListPlot[{{";
-	for (int i = 0; i < results.size(); i++)
-	{
-		myfile << results[i][1];
-		if (i < results.size() - 1)
-		{
-			myfile << ",";
-		}
-		else {
-			myfile << "},{";
-		}
-	}
-
-	for (int i = 0; i < results.size(); i++)
-	{
-		if (i < results.size() - 1)
-		{
-			myfile << results[i][2] << ", ";
-		}
-		else {
-			myfile << results[i][2] << "}} // Transpose, Epilog -> {Text[\"sine\", Scaled[{.2, .8}]]}, PlotRange -> {{0, 60}, {-.2, 1.2}}]";
-		}
-	}
-	myfile.close();
-}
-
-void reportTime(int iter, steady_clock::time_point& currentTime, steady_clock::time_point& lastTime, int currentIteration, int totalIterations)
-{
-	currentTime = steady_clock::now();
-	duration<double> time_span = std::chrono::duration_cast<duration<double>>(currentTime - lastTime);
-	double remainingTime = (((time_span.count()) / iter) * (totalIterations - currentIteration));
-	cout << "Iterations remaining: " << totalIterations - currentIteration << endl;
-
-	if (remainingTime > 60)
-	{
-		if (remainingTime > 3600)
-		{
-			int hours = remainingTime / 3600;
-			int minutes = fmod(remainingTime, 3600) / 60;
-			int seconds = fmod(fmod(remainingTime, 60), minutes);
-			cout << "Remaining Time: " << hours << " hours " << minutes << " minutes " << seconds << " seconds." << endl;
-		}
-		else
-		{
-			int minutes = fmod(remainingTime, 3600) / 60;
-			int seconds = fmod(fmod(remainingTime, 60), minutes);
-			cout << "Remaining Time: " << minutes << " minutes " << seconds << " seconds." << endl;
-		}
-	}
-	else {
-		int seconds = remainingTime;
-		cout << "Remaining Time: " << seconds << " seconds." << endl;
-	}
-}
-
-//void plotRealTime(Gnuplot latticePlot, vector<vector<int >> lattice)
-//{
-//	// Display state
-//	latticePlot << "unset key\n";
-//	latticePlot << "set pm3d\n";
-//	latticePlot << "set hidden3d\n";
-//	latticePlot << "set view map\n";
-//	latticePlot << "set xrange [ 0 : " << N << " ] \n";
-//	latticePlot << "set yrange [ 0 : " << N << " ] \n";
-//	latticePlot << "splot '-'\n";
-//	latticePlot.send2d(lattice);
-//	latticePlot.flush(); 
-//}
-
-int main() {
-	//Gnuplot latticePlot;
-	//Gnuplot tempVmagnetization;
-	typedef std::chrono::high_resolution_clock Clock;
-	const int N = 10;
-	vector<vector<int>> lattice(N, vector<int>(N, 1));
-	int randRow;
-	int randCol;
-	float energyDiff;
-	float currentTemp = .001; // Kelvin
-	float maxTemp = 6;
-	float tempStep = .05;
-	float magnetization = 0;
-	const int iteraLattice = 10 * N * N;
-	bool rand = 1;
-	const int iteraTemp = 30;
-	float magnetAvgArray[iteraTemp];
-	vector<vector<float>> results;
-	float magnetAvg;
-	float stdDev;
-	int tempIndex = 0;
-	int currentIteration = 0;
-	int totalIterations = (maxTemp / tempStep) * iteraLattice * iteraTemp;
-	steady_clock::time_point currentTime = steady_clock::now();
-	steady_clock::time_point lastTime = steady_clock::now();
-
-	// Array element selection random distribution
-	std::uniform_int_distribution<int> latticeDist(0, N - 1);
-
-	while (currentTemp < (maxTemp + tempStep)) {
-		int i = 0;
-		while (i < iteraTemp)
-		{
-			//Reset and calculate initial average magnetization
-			lattice = fillArray(lattice, N, rand, magnetization);
-			// Iterate over lattice
-			for (int i = 0; i < iteraLattice; i++)
-			{
-				// Pick random array element
-				randRow = latticeDist(engine);
-				randCol = latticeDist(engine);
-
-				// Calculate energy difference (E_new - E_old)
-				energyDiff = findEnergyDiff(randRow, randCol, lattice, N);
-				
-				// Metropolis test
-				metroTest(energyDiff, lattice, randRow, randCol, magnetization, currentTemp);
-
-				int iter = 100000;
-				if (currentIteration % iter == 0 && currentIteration > 5)
-				{
-					reportTime(iter, currentTime, lastTime, currentIteration, totalIterations);
-					lastTime = currentTime;
+			//calculate crit temp
+			unsigned short min_sus_idx = 0;//index in terms of mag
+			float min_sus = numeric_limits<float>::infinity();
+			for(unsigned short i = 1; i<mags.size()-1;i++){
+				float new_sus = (mags[i+1]-mags[i-1])/(2*SimPar->TEMP_STEP);
+				if(new_sus < min_sus){
+					min_sus = new_sus;
+					min_sus_idx = i;
 				}
-				if (currentIteration == 1)
-				{
-					cout << "Calculating remaining time..." << endl;
-				}
-				currentIteration++;
 			}
-			// Normalize magnetization
-			magnetization = (magnetization / (N * N));
-
-			magnetAvgArray[i] = magnetization;
-			i++;
-
-			//plotRealTime(latticePlot, lattice);
+			TempCritsAvg+=(SimPar->MIN_TEMP+SimPar->TEMP_STEP*min_sus_idx);
+			cout << (SimPar->MIN_TEMP+SimPar->TEMP_STEP*min_sus_idx) << "\n";
 		}
+		TempCritsAvg/=SimPar->CRIT_REPEATS;
+		cout << "Final Average Critical Temp: " << TempCritsAvg << endl;
 
-		cout << "Current temperature: " << currentTemp << endl;
-		// Find average
-		magnetAvg = averageArray(magnetAvgArray, iteraTemp);
-		// Find standard deviation
-		stdDev = findStdDev(magnetAvg, magnetAvgArray, iteraTemp);
-		// Store results
-		vector<float> resultsVec = {currentTemp, magnetAvg, stdDev};
-		results.insert(results.end(), resultsVec);
-		// Increment temperature
-		currentTemp += tempStep;
-		tempIndex++;
 	}
+	else{
+		for(float T = SimPar->MIN_TEMP;T<SimPar->MAX_TEMP;T+=SimPar->TEMP_STEP)
+		{
+			SimPar->temperature = T;
+			cout << "\nTemperature: " << T << endl;
+			en_stream << T << "\n";
 
-	cout << "Complete... " << endl;
-	generateMathematica(results);
-	std::cin.get();
+			//TODO SimPar->MAXTIMESTEPS=calc_timesteps(SimPar);
+			cout << "MAXTIMESTEPS = " << SimPar->MAXTIMESTEPS << "\n";
+			CSimulation Simulation(SimPar);
+			CLattice lattice(SimPar->HEIGHT,SimPar->WIDTH, SimPar->COUPLING_CONSTANT);
+			CObject *lattice2 = &lattice;
+			Simulation.addObject(lattice2);
+
+			Simulation.run(pos_stream,mag_stream, SimPar);
+			pos_of.flush();
+			mag_of.flush();
+			en_of.flush();
+			float energy = Simulation.calcEnergy();
+			cout << "Final Energy: " << energy << "\n";
+			en_stream << energy << "\n";
+		}
+	}
+	delete SimPar;
+    return 0;
 }

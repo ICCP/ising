@@ -1,0 +1,29 @@
+CC = g++
+CFLAGS = -Wall -g -std=c++11
+LDFLAGS = -lm
+EXENAME = ising2.exe
+OBJS = main.o SimulationParametersStruct.o CSimulation.o UtilityFunctions.o CLattice.o CObject.o
+
+$(EXENAME) : $(OBJS)
+	${CC} ${CFLAGS} ${LDFLAGS} $(OBJS) -o $(EXENAME)
+
+CLattice.o : CLattice.cpp CLattice.h CObject.h
+	${CC} ${CFLAGS} -c CLattice.cpp
+
+CSimulation.o : CSimulation.cpp CSimulation.h CLattice.h SimulationParametersStruct.cpp CObject.h
+	${CC} ${CFLAGS} -c CSimulation.cpp
+
+CObject.o : CObject.cpp CObject.h
+	${CC} ${CFLAGS} -c CObject.cpp
+
+SimulationParametersStruct.o : SimulationParametersStruct.cpp
+	${CC} ${CFLAGS} -c SimulationParametersStruct.cpp
+
+UtilityFunctions.o : UtilityFunctions.cpp UtilityFunctions.h
+	${CC} ${CFLAGS} -c UtilityFunctions.cpp
+
+main.o : main.cpp CSimulation.h SimulationParametersStruct.cpp
+	${CC} ${CFLAGS} -c main.cpp
+
+clean :
+	rm -f *.o $(EXENAME)
